@@ -15,6 +15,36 @@
     intro.className = "vessel-intro";
     intro.innerHTML = '<div><div class="eyebrow">SotonShip / Vessel intelligence</div><h2>Vessel risk report</h2><p>A clearer decision, with the evidence one step away.</p></div><span class="intro-status">90-day outlook · Analyst review</span>';
     main.querySelector(".grid-vessel").before(intro);
+    const actions = document.createElement("div");
+    actions.className = "vessel-actions";
+    actions.innerHTML = '<button type="button" id="vessel-watch" aria-pressed="false">☆ Save to watchlist</button><button type="button" id="vessel-export">↗ Save as PDF</button><span id="watch-notice" class="watch-notice" role="status" aria-live="polite"></span>';
+    intro.append(actions);
+    const watchKey = "sfp_vessel_watchlist_v1";
+    const readWatch = () => { try { const x = JSON.parse(localStorage.getItem(watchKey) || "[]"); return Array.isArray(x) ? x : []; } catch { return []; } };
+    const refreshWatch = () => {
+      const saved = readWatch().includes(location.hash.slice(8));
+      const btn = $v("#vessel-watch");
+      if (!btn) return;
+      btn.textContent = saved ? "★ Saved to watchlist" : "☆ Save to watchlist";
+      btn.setAttribute("aria-pressed", String(saved));
+    };
+    $v("#vessel-watch").addEventListener("click", () => {
+      const imo = location.hash.slice(8), list = readWatch();
+      const next = list.includes(imo) ? list.filter(x=>x!==imo) : [...list,imo];
+      try { localStorage.setItem(watchKey, JSON.stringify(next)); refreshWatch(); $v("#watch-notice").textContent = next.includes(imo) ? "Saved in this browser" : "Removed from watchlist"; }
+      catch { $v("#watch-notice").textContent = "Unable to save on this device"; }
+    });
+    $v("#vessel-export").addEventListener("click", () => window.print());
+    window.addEventListener("beforeprint", () => {
+      const d=$v("#vessel-details");
+      if(d && !d.open){ d.open=true; d.dataset.printOpened="true"; }
+    });
+    window.addEventListener("afterprint", () => {
+      const d=$v("#vessel-details");
+      if(d?.dataset.printOpened==="true"){ d.open=false; delete d.dataset.printOpened; }
+    });
+    window.addEventListener("hashchange", refreshWatch);
+    refreshWatch();
     $v("#card").classList.add("vessel-left");
     $v("#chat").parentElement.classList.add("vessel-right");
     const section = document.createElement("section");
