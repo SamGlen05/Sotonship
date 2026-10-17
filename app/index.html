@@ -1,3 +1,4 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tanker Sanctions Watch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -201,6 +202,7 @@ footer.disc { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--r
 .warn { background: var(--med-soft); border-left: 4px solid var(--med); padding: 10px 12px; border-radius: 0 var(--r) var(--r) 0; font-size: 14px }
 @media (prefers-reduced-motion: no-preference) { .results, .msg { animation: fade .15s ease-out } @keyframes fade { from { opacity: .4 } } }
 </style>
+<link rel="stylesheet" href="vessel-report.css">
 
 <div class="wrap">
   <header class="top">
@@ -930,3 +932,4 @@ function route() {
 window.addEventListener("hashchange", route);
 renderKpis(); renderWatch(); if (GLOBAL) renderAccum(); else $("#accum").closest(".panel").hidden = true; renderBacktest(); fleetMap(); route();
 </script>
+<script src="vessel-report.js"></script>

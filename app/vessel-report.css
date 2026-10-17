@@ -1,0 +1,113 @@
+/* SotonShip vessel workspace v1. Scope every change to the vessel view. */
+#vessel { --v-radius:16px; --v-border:var(--rule); }
+#vessel [hidden] { display:none !important; }
+#vessel > .back { margin:3px 0 16px; font-size:13px; padding:8px 0; }
+#vessel .vessel-intro { display:flex; justify-content:space-between; align-items:end; gap:20px; margin:0 0 20px; padding:0 0 18px; border-bottom:1px solid var(--rule); }
+#vessel .vessel-intro .eyebrow { color:var(--accent); font:700 11px var(--f-mono); letter-spacing:.14em; text-transform:uppercase; margin-bottom:6px; }
+#vessel .vessel-intro h2 { font-size:23px; line-height:1.18; letter-spacing:-.03em; text-transform:none; color:var(--ink); }
+#vessel .vessel-intro p { color:var(--ink-2); font-size:13px; margin:5px 0 0; }
+#vessel .intro-status { flex-shrink:0; color:var(--muted); font:12px var(--f-mono); background:var(--panel); border:1px solid var(--rule); border-radius:999px; padding:8px 12px; }
+#vessel .grid-vessel { grid-template-columns:minmax(0, .92fr) minmax(0, 1.08fr); align-items:start; gap:22px; }
+#vessel .vessel-left { gap:16px; }
+#vessel .vessel-left .panel, #vessel .vessel-right .panel { border:1px solid var(--v-border); border-radius:var(--v-radius); box-shadow:0 6px 26px rgb(14 36 51 / .035); }
+#vessel .vessel-hero { padding:23px 24px 24px; }
+#vessel .vessel-hero .vhead h1 { font-size:clamp(27px,3vw,38px); letter-spacing:-.045em; overflow-wrap:anywhere; }
+#vessel .vessel-hero .idline { font-size:11px; gap:7px 14px; }
+#vessel .vessel-hero .score { padding:18px; margin-top:21px; border-radius:12px; gap:20px; grid-template-columns:minmax(105px, auto) 1fr; }
+#vessel .vessel-hero .score .big { font-size:clamp(34px,4vw,50px); white-space:nowrap; }
+#vessel .vessel-hero .score .big small { display:block; padding-top:7px; font-size:12px; }
+#vessel .vessel-hero .score .small { font-size:12px; }
+#vessel .vessel-hero .meter { height:6px; border-radius:20px; }
+#vessel .vessel-subheading { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:23px 0 12px; }
+#vessel .vessel-subheading h2 { font-size:11px; letter-spacing:.12em; }
+#vessel .reason-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+#vessel .reason-list li { display:flex; gap:11px; align-items:start; border:1px solid var(--rule); border-radius:10px; padding:11px 12px; }
+#vessel .reason-icon { display:grid; place-items:center; flex-shrink:0; width:25px; height:25px; border-radius:8px; font:700 12px var(--f-mono); background:var(--accent-soft); color:var(--accent); }
+#vessel .reason-list strong { display:block; font-size:13px; line-height:1.2; margin-bottom:4px; }
+#vessel .reason-list span.reason-desc { color:var(--ink-2); font-size:12px; line-height:1.42; display:block; }
+#vessel .decision { margin-top:18px; padding:15px 16px; background:var(--sea); border:1px solid var(--rule); border-radius:10px; }
+#vessel .decision-label { font:700 10px var(--f-mono); letter-spacing:.09em; color:var(--ink-2); text-transform:uppercase; }
+#vessel .decision strong { display:block; font-size:15px; margin:5px 0; }
+#vessel .decision p { font-size:13px; line-height:1.48; margin:0; color:var(--ink-2); }
+#vessel .vessel-right { position:sticky; top:16px; }
+#vessel .vessel-right .chat { min-height:565px; padding:0; gap:0; overflow:hidden; display:flex; }
+#vessel .chat-topline { background:var(--ink); color:var(--panel); padding:18px 20px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+#vessel .chat-topline .chat-kicker { color:#aebfcf; font:600 10px var(--f-mono); letter-spacing:.13em; text-transform:uppercase; }
+#vessel .chat-topline h2 { font:700 20px var(--f-display); color:var(--panel); text-transform:none; letter-spacing:-.02em; margin-top:4px; }
+#vessel .chat-mode { font:600 10px var(--f-mono); color:#c9d8e2; border:1px solid #496070; border-radius:999px; padding:6px 9px; text-align:center; }
+#vessel .chat-body { display:flex; flex-direction:column; flex:1; min-height:0; padding:17px 20px 20px; gap:12px; }
+#vessel .chat-helper { font-size:12px; color:var(--ink-2); line-height:1.5; margin:0; }
+#vessel #suggest { order:2; padding-top:4px; gap:7px; }
+#vessel #suggest button { padding:8px 12px; font-size:12px; text-align:left; border-radius:999px; background:var(--panel); border:1px solid var(--rule); color:var(--ink); }
+#vessel #suggest button:hover { background:var(--accent-soft); }
+#vessel #msgs { min-height:195px; max-height:340px; flex:1; overflow-y:auto; padding:7px 3px 14px; gap:12px; }
+#vessel .msg { padding:12px 14px; max-width:92%; border-radius:13px; line-height:1.5; white-space:pre-wrap; }
+#vessel .msg.bot { background:var(--sea); border-bottom-left-radius:4px; align-self:flex-start; }
+#vessel .msg.user { background:var(--accent); color:white; border-bottom-right-radius:4px; }
+#vessel .chat-input-wrap { order:3; margin-top:auto; border-top:1px solid var(--rule); padding-top:12px; }
+#vessel .chat-input-wrap .ask { align-items:flex-end; }
+#vessel .chat-input-wrap textarea { border-radius:10px; resize:vertical; max-height:180px; min-height:55px; padding:12px; line-height:1.4; }
+#vessel .chat-input-wrap .primary { padding:11px 16px; border-radius:10px; min-height:43px; }
+#vessel .chat-disclaimer { color:var(--muted); font-size:11px; margin:8px 0 0; }
+#vessel .evidence-section { margin-top:30px; }
+#vessel .evidence-details { background:var(--panel); border:1px solid var(--rule); border-radius:var(--v-radius); }
+#vessel .evidence-details > summary { list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:15px; padding:20px 23px; }
+#vessel .evidence-details > summary::-webkit-details-marker { display:none; }
+#vessel .evidence-details > summary strong { display:block; color:var(--ink); font:700 17px var(--f-display); }
+#vessel .evidence-details > summary .small { display:block; margin-top:3px; }
+#vessel .evidence-details > summary .evidence-toggle { border:1px solid var(--rule); border-radius:20px; padding:5px 11px; font-size:12px; white-space:nowrap; }
+#vessel .evidence-details[open] > summary .evidence-toggle::before { content:'Hide details'; }
+#vessel .evidence-details:not([open]) > summary .evidence-toggle::before { content:'Explore details'; }
+#vessel .evidence-inner { border-top:1px solid var(--rule); padding:18px; display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0, .9fr); gap:16px; }
+#vessel .evidence-inner .panel { border-radius:10px; box-shadow:none; }
+#vessel .evidence-inner #report { align-self:start; }
+#vessel .evidence-inner .support-side { gap:16px; }
+#vessel .report-footnote { margin-top:12px; font-size:12px; color:var(--muted); }
+@media(max-width:900px){
+ #vessel .grid-vessel { grid-template-columns:1fr; gap:16px; }
+ #vessel .vessel-right { position:static; }
+ #vessel .vessel-right .chat { min-height:500px; }
+ #vessel .evidence-inner { grid-template-columns:1fr; }
+ #vessel .vessel-intro { align-items:start; }
+}
+@media(max-width:620px){
+ #vessel .vessel-intro { margin-bottom:15px; }
+ #vessel .vessel-intro h2 { font-size:20px; }
+ #vessel .intro-status { display:none; }
+ #vessel .vessel-hero { padding:19px 16px; }
+ #vessel .vessel-hero .score { grid-template-columns:1fr; gap:12px; }
+ #vessel .vessel-right .chat { min-height:490px; }
+ #vessel .chat-body { padding:15px; }
+ #vessel .evidence-details > summary { padding:16px; }
+ #vessel .evidence-inner { padding:12px; }
+}
+
+/* Local-only watchlist and print controls */
+#vessel .vessel-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-left:auto; }
+#vessel .vessel-actions button { border:1px solid var(--rule); background:var(--panel); padding:8px 11px; font-size:12px; border-radius:9px; white-space:nowrap; }
+#vessel .vessel-actions button[aria-pressed="true"] { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+#vessel .vessel-actions #vessel-export { background:var(--ink); color:var(--panel); border-color:var(--ink); }
+#vessel .watch-notice { flex-basis:100%; text-align:right; font-size:11px; color:var(--ink-2); min-height:0; }
+@media(max-width:720px) {
+ #vessel .vessel-intro { flex-wrap:wrap; }
+ #vessel .vessel-actions { flex-basis:100%; margin-left:0; }
+ #vessel .watch-notice { text-align:left; }
+}
+@media print {
+ @page { size:A4; margin:13mm; }
+ html,body { background:white !important; color:#17232d !important; }
+ .wrap { max-width:100%; padding:0 !important; }
+ header.top, #home, #analysis, #back, #vessel .vessel-actions, #vessel .vessel-right, footer.disc,
+ .evidence-toggle, #vessel #jump-evidence { display:none !important; }
+ #vessel { display:block !important; }
+ #vessel .grid-vessel, #vessel .evidence-inner { display:block !important; }
+ #vessel .vessel-left, #vessel .support-side { display:block !important; }
+ #vessel .panel { box-shadow:none !important; break-inside:avoid; margin:0 0 13px !important; }
+ #vessel .evidence-details { border:0; }
+ #vessel .evidence-details > summary { padding:12px 0; border-bottom:1px solid #ddd; }
+ #vessel .evidence-inner { padding:12px 0; }
+ #vessel .vessel-intro { margin-bottom:12px; }
+ #vessel .vessel-hero .score { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+ #vessel .chat { display:none !important; }
+}
+@media(max-width:1100px) { #vessel .vessel-intro { flex-wrap:wrap; } #vessel .vessel-actions { margin-left:0; } }
