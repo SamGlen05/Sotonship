@@ -81,3 +81,32 @@
  #vessel .evidence-details > summary { padding:16px; }
  #vessel .evidence-inner { padding:12px; }
 }
+
+/* Local-only watchlist and print controls */
+#vessel .vessel-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-left:auto; }
+#vessel .vessel-actions button { border:1px solid var(--rule); background:var(--panel); padding:8px 11px; font-size:12px; border-radius:9px; white-space:nowrap; }
+#vessel .vessel-actions button[aria-pressed="true"] { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+#vessel .vessel-actions #vessel-export { background:var(--ink); color:var(--panel); border-color:var(--ink); }
+#vessel .watch-notice { flex-basis:100%; text-align:right; font-size:11px; color:var(--ink-2); min-height:0; }
+@media(max-width:720px) {
+ #vessel .vessel-intro { flex-wrap:wrap; }
+ #vessel .vessel-actions { flex-basis:100%; margin-left:0; }
+ #vessel .watch-notice { text-align:left; }
+}
+@media print {
+ @page { size:A4; margin:13mm; }
+ html,body { background:white !important; color:#17232d !important; }
+ .wrap { max-width:100%; padding:0 !important; }
+ header.top, #home, #analysis, #back, #vessel .vessel-actions, #vessel .vessel-right, footer.disc,
+ .evidence-toggle, #vessel #jump-evidence { display:none !important; }
+ #vessel { display:block !important; }
+ #vessel .grid-vessel, #vessel .evidence-inner { display:block !important; }
+ #vessel .vessel-left, #vessel .support-side { display:block !important; }
+ #vessel .panel { box-shadow:none !important; break-inside:avoid; margin:0 0 13px !important; }
+ #vessel .evidence-details { border:0; }
+ #vessel .evidence-details > summary { padding:12px 0; border-bottom:1px solid #ddd; }
+ #vessel .evidence-inner { padding:12px 0; }
+ #vessel .vessel-intro { margin-bottom:12px; }
+ #vessel .vessel-hero .score { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+ #vessel .chat { display:none !important; }
+}
