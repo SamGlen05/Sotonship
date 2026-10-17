@@ -110,3 +110,4 @@
  #vessel .vessel-hero .score { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
  #vessel .chat { display:none !important; }
 }
+@media(max-width:1100px) { #vessel .vessel-intro { flex-wrap:wrap; } #vessel .vessel-actions { margin-left:0; } }
