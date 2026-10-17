@@ -201,6 +201,7 @@ footer.disc { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--r
 .warn { background: var(--med-soft); border-left: 4px solid var(--med); padding: 10px 12px; border-radius: 0 var(--r) var(--r) 0; font-size: 14px }
 @media (prefers-reduced-motion: no-preference) { .results, .msg { animation: fade .15s ease-out } @keyframes fade { from { opacity: .4 } } }
 </style>
+<link rel="stylesheet" href="vessel-report.css">
 
 <div class="wrap">
   <header class="top">
@@ -930,3 +931,4 @@ function route() {
 window.addEventListener("hashchange", route);
 renderKpis(); renderWatch(); if (GLOBAL) renderAccum(); else $("#accum").closest(".panel").hidden = true; renderBacktest(); fleetMap(); route();
 </script>
+<script src="vessel-report.js"></script>
