@@ -1,0 +1,49 @@
+name: Extract uploaded Sotonship project
+
+on:
+  push:
+    paths:
+      - '.github/workflows/extract-project.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Extract project archive into repository root
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          archive = Path("sotonship26-main.zip")
+          root = Path.cwd().resolve()
+          with ZipFile(archive) as z:
+              members = [m for m in z.infolist() if not m.is_dir()]
+              for member in members:
+                  path = Path(member.filename)
+                  if len(path.parts) < 2 or path.parts[0] != "sotonship26-main":
+                      raise ValueError("Unexpected archive path: " + member.filename)
+                  rel = Path(*path.parts[1:])
+                  dest = (root / rel).resolve()
+                  if not dest.is_relative_to(root) or dest == archive.resolve() or rel.parts[0] == ".git":
+                      raise ValueError("Unsafe archive path: " + member.filename)
+                  dest.parent.mkdir(parents=True, exist_ok=True)
+                  dest.write_bytes(z.read(member))
+          print("Extracted", len(members), "files.")
+          PY
+      - name: Commit extracted project
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Extract Sotonship project files from archive"
+            git push
+          fi
