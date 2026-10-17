@@ -1,0 +1,15 @@
+{
+  "ran_utc": "2026-10-17T02:20:17+00:00",
+  "inputs": [
+    {
+      "file": "data/processed/features.parquet",
+      "url": null,
+      "retrieved_utc": null
+    }
+  ],
+  "outputs": {
+    "train_rows": 20990,
+    "test_rows": 9110
+  },
+  "notes": "trained only on snapshots before TRAIN_CUTOFF"
+}

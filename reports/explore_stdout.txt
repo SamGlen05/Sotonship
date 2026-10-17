@@ -1,0 +1,262 @@
+{
+ "timing": {
+  "uk_designated_on": {
+   "2024-07": 17,
+   "2024-09": 20,
+   "2024-10": 22,
+   "2024-11": 31,
+   "2024-12": 20,
+   "2025-02": 40,
+   "2025-05": 117,
+   "2025-06": 20,
+   "2025-07": 135,
+   "2025-09": 71,
+   "2025-10": 49,
+   "2026-02": 50,
+   "2026-06": 27,
+   "2026-08": 6,
+   "2026-10": 20
+  },
+  "eu_listed_on": {
+   "2024-06": 25,
+   "2024-12": 50,
+   "2025-02": 74,
+   "2025-05": 183,
+   "2025-07": 103,
+   "2025-10": 110,
+   "2025-12": 41,
+   "2026-04": 45,
+   "2026-07": 40
+  },
+  "us_designated_on": {
+   "2022-02": 2,
+   "2022-03": 3,
+   "2022-04": 4,
+   "2022-05": 69,
+   "2022-06": 3,
+   "2022-12": 1,
+   "2023-01": 1,
+   "2023-02": 22,
+   "2023-04": 17,
+   "2023-05": 5,
+   "2023-07": 14,
+   "2023-09": 2,
+   "2023-10": 1,
+   "2023-11": 3,
+   "2023-12": 7,
+   "2024-01": 17,
+   "2024-02": 27,
+   "2024-05": 16,
+   "2024-06": 7,
+   "2024-08": 7,
+   "2024-09": 11,
+   "2024-12": 3,
+   "2025-01": 183
+  }
+ },
+ "uk_batches_listed_elsewhere_first": {
+  "2024-07-31": {
+   "n": 17,
+   "listed_elsewhere_first": 7
+  },
+  "2024-09-10": {
+   "n": 15,
+   "listed_elsewhere_first": 2
+  },
+  "2024-09-26": {
+   "n": 5,
+   "listed_elsewhere_first": 4
+  },
+  "2024-10-17": {
+   "n": 22,
+   "listed_elsewhere_first": 2
+  },
+  "2024-11-25": {
+   "n": 30,
+   "listed_elsewhere_first": 15
+  },
+  "2024-12-17": {
+   "n": 20,
+   "listed_elsewhere_first": 0
+  },
+  "2025-02-24": {
+   "n": 40,
+   "listed_elsewhere_first": 11
+  },
+  "2025-05-09": {
+   "n": 99,
+   "listed_elsewhere_first": 4
+  },
+  "2025-05-20": {
+   "n": 18,
+   "listed_elsewhere_first": 2
+  },
+  "2025-06-17": {
+   "n": 20,
+   "listed_elsewhere_first": 3
+  },
+  "2025-07-21": {
+   "n": 135,
+   "listed_elsewhere_first": 134
+  },
+  "2025-09-12": {
+   "n": 69,
+   "listed_elsewhere_first": 68
+  },
+  "2025-10-15": {
+   "n": 49,
+   "listed_elsewhere_first": 26
+  },
+  "2026-02-24": {
+   "n": 50,
+   "listed_elsewhere_first": 47
+  },
+  "2026-06-16": {
+   "n": 27,
+   "listed_elsewhere_first": 23
+  },
+  "2026-08-06": {
+   "n": 6,
+   "listed_elsewhere_first": 0
+  },
+  "2026-10-01": {
+   "n": 8,
+   "listed_elsewhere_first": 4
+  },
+  "2026-10-08": {
+   "n": 12,
+   "listed_elsewhere_first": 12
+  }
+ },
+ "uk_lag_days_when_following": {
+  "count": 365.0,
+  "mean": 211.2,
+  "std": 214.2,
+  "min": 21.0,
+  "25%": 61.0,
+  "50%": 192.0,
+  "75%": 245.0,
+  "max": 1255.0
+ },
+ "uk_counts": {
+  "followed_eu_or_us": 365,
+  "uk_first": 244,
+  "same_day": 2,
+  "uk_only": 34
+ },
+ "baseline_follow_the_leader": {
+  "T=2026-06-01 batch=2026-06-16": {
+   "batch_size": 27,
+   "pool_size": 300,
+   "in_pool": 23,
+   "hits@25": 16,
+   "hits@50": 23,
+   "hits@100": 23
+  },
+  "T=2026-09-01 batch=2026-10-01+2026-10-02": {
+   "batch_size": 8,
+   "pool_size": 312,
+   "in_pool": 4,
+   "hits@25": 1,
+   "hits@50": 2,
+   "hits@100": 2
+  }
+ },
+ "coverage_uk_batches_in_danish_ais_sample": {
+  "2026-02-24": {
+   "batch_size": 50,
+   "seen_before_designation": 2,
+   "seen_any_sample_day": 7
+  },
+  "2026-06-16": {
+   "batch_size": 27,
+   "seen_before_designation": 3,
+   "seen_any_sample_day": 3
+  },
+  "2026-10-01": {
+   "batch_size": 8,
+   "seen_before_designation": 0,
+   "seen_any_sample_day": 0
+  },
+  "2026-10-08": {
+   "batch_size": 12,
+   "seen_before_designation": 1,
+   "seen_any_sample_day": 1
+  }
+ },
+ "ais_sample": {
+  "n_days": 7,
+  "first_day": "2026-01-07",
+  "last_day": "2026-05-27",
+  "tanker_imos": 907,
+  "tanker_days": 1552,
+  "tanker_imos_per_day_median": 225.0
+ },
+ "contrast_tankers_by_status_at_first_sample_day": {
+  "already designated": {
+   "ships": 77,
+   "build_year_known_%": 100.0,
+   "median_build_year": 2006.0,
+   "flag_of_convenience_%": 29.9,
+   "russian_port_destination_%": 14.3,
+   "notable_destination_%": 39.0,
+   "more_than_one_mmsi_%": 1.3,
+   "spoof_jump_any_%": 1.3,
+   "intraday_gap_any_%": 18.2,
+   "top_flags": {
+    "Sierra Leone": 27,
+    "Cameroon": 15,
+    "Russia": 15,
+    "Oman": 8,
+    "Panama": 4
+   }
+  },
+  "designated later": {
+   "ships": 6,
+   "build_year_known_%": 83.3,
+   "median_build_year": 2005.0,
+   "flag_of_convenience_%": 33.3,
+   "russian_port_destination_%": 0.0,
+   "notable_destination_%": 50.0,
+   "more_than_one_mmsi_%": 0.0,
+   "spoof_jump_any_%": 0.0,
+   "intraday_gap_any_%": 33.3,
+   "top_flags": {
+    "Palau": 2,
+    "Russia": 1,
+    "Guinea": 1,
+    "Liberia": 1,
+    "Panama": 1
+   }
+  },
+  "not designated (as of 2026-10-16)": {
+   "ships": 824,
+   "build_year_known_%": 2.5,
+   "median_build_year": 2007.0,
+   "flag_of_convenience_%": 51.3,
+   "russian_port_destination_%": 2.4,
+   "notable_destination_%": 14.9,
+   "more_than_one_mmsi_%": 0.8,
+   "spoof_jump_any_%": 2.2,
+   "intraday_gap_any_%": 29.7,
+   "top_flags": {
+    "Malta": 104,
+    "Liberia": 92,
+    "Marshall Islands": 87,
+    "Norway": 62,
+    "Madeira": 57
+   }
+  }
+ },
+ "quality": {
+  "uk_ships": 683,
+  "uk_ships_missing_valid_imo": 1,
+  "eu_rows": 733,
+  "eu_duplicate_imo_rows": 4,
+  "imos_with_multiple_mmsi_in_sample": 25,
+  "mmsis_with_multiple_imo_in_sample": 0,
+  "ais_static_tanker_rows_without_imo_%": null,
+  "master_build_year_known_designated_%": 67.6,
+  "master_build_year_known_ais_only_%": 0.0
+ }
+}

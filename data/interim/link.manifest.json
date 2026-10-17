@@ -1,0 +1,22 @@
+{
+  "ran_utc": "2026-10-17T02:20:12+00:00",
+  "inputs": [
+    {
+      "file": "itu_mid/wikipedia_maritime_identification_digits.html",
+      "url": "https://en.wikipedia.org/wiki/Maritime_identification_digits",
+      "retrieved_utc": "2026-10-16T21:40:55+00:00"
+    },
+    {
+      "file": "gur/vessels.parquet",
+      "url": "https://data.source.coop/cholmes/gur-shadow-fleet/vessels/vessels.parquet",
+      "retrieved_utc": "2026-10-16T21:37:51+00:00"
+    }
+  ],
+  "outputs": {
+    "mid_flags": 292,
+    "mmsi_imo": 15633,
+    "vessel_master": 16161,
+    "ais_days": 187856
+  },
+  "notes": "AIS inputs listed in ais.manifest.json; label inputs in labels.manifest.json"
+}

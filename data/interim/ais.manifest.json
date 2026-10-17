@@ -1,0 +1,83 @@
+{
+  "ran_utc": "2026-10-16T22:10:15+00:00",
+  "inputs": [
+    {
+      "file": "dma_ais/aisdk-2026-01-07.zip",
+      "url": "http://aisdata.ais.dk/aisdk-2026-01-07.zip",
+      "retrieved_utc": "2026-10-16T21:40:14+00:00"
+    },
+    {
+      "file": "dma_ais/aisdk-2026-02-04.zip",
+      "url": "http://aisdata.ais.dk/aisdk-2026-02-04.zip",
+      "retrieved_utc": "2026-10-16T21:35:28+00:00"
+    },
+    {
+      "file": "dma_ais/aisdk-2026-04-01.zip",
+      "url": "http://aisdata.ais.dk/aisdk-2026-04-01.zip",
+      "retrieved_utc": "2026-10-16T22:00:44+00:00"
+    },
+    {
+      "file": "dma_ais/aisdk-2026-04-15.zip",
+      "url": "http://aisdata.ais.dk/aisdk-2026-04-15.zip",
+      "retrieved_utc": "2026-10-16T22:01:03+00:00"
+    },
+    {
+      "file": "dma_ais/aisdk-2026-04-29.zip",
+      "url": "http://aisdata.ais.dk/aisdk-2026-04-29.zip",
+      "retrieved_utc": "2026-10-16T21:56:33+00:00"
+    },
+    {
+      "file": "dma_ais/aisdk-2026-05-13.zip",
+      "url": "http://aisdata.ais.dk/aisdk-2026-05-13.zip",
+      "retrieved_utc": "2026-10-16T22:00:56+00:00"
+    },
+    {
+      "file": "dma_ais/aisdk-2026-05-27.zip",
+      "url": "http://aisdata.ais.dk/aisdk-2026-05-27.zip",
+      "retrieved_utc": "2026-10-16T22:03:19+00:00"
+    }
+  ],
+  "outputs": {
+    "days": [
+      {
+        "day": "2026-01-07",
+        "skipped": true
+      },
+      {
+        "day": "2026-02-04",
+        "skipped": true
+      },
+      {
+        "day": "2026-04-01",
+        "static_rows": 4319,
+        "pos_rows": 43539,
+        "pos_mmsi": 238
+      },
+      {
+        "day": "2026-04-15",
+        "static_rows": 4240,
+        "pos_rows": 42027,
+        "pos_mmsi": 230
+      },
+      {
+        "day": "2026-04-29",
+        "static_rows": 6395,
+        "pos_rows": 44381,
+        "pos_mmsi": 250
+      },
+      {
+        "day": "2026-05-13",
+        "static_rows": 4716,
+        "pos_rows": 35201,
+        "pos_mmsi": 179
+      },
+      {
+        "day": "2026-05-27",
+        "static_rows": 7043,
+        "pos_rows": 44143,
+        "pos_mmsi": 311
+      }
+    ]
+  },
+  "notes": "resample=5min; tanker types=('Tanker',)"
+}

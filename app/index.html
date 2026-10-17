@@ -1,0 +1,932 @@
+<title>Tanker Sanctions Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: chart-room console. Home = past searches (left) + search & fleet overview (right).
+   Vessel = risk card with chart (left) + report and question box (right). */
+:root {
+  --paper: #f3f5f4;      /* chart-paper ground */
+  --panel: #ffffff;
+  --ink: #0f2233;        /* deep navy ink */
+  --ink-2: #4a5d6c;
+  --muted: #7b8a95;
+  --rule: #d8dfe3;
+  --sea: #e6eef2;
+  --land: #d9d4c7;
+  --land-edge: #b9b2a1;
+  --accent: #1d5c8c;     /* chart blue */
+  --accent-soft: #e2edf6;
+  --high: #c8372d; --high-soft: #fbe7e5;
+  --med: #b8730a;  --med-soft: #fbf0dc;
+  --low: #2f7d4f;  --low-soft: #e3f2e8;
+  --sanc: #5b2a86; --sanc-soft: #efe6f7;
+  --none: #7b8a95;
+  --div-neg: #2a78d6; --div-mid: #f0efec; --div-pos: #e34948;   /* diverging: correlation */
+  --seq-lo: #cde2fb; --seq-hi: #0d366b;                          /* sequential: density */
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #0d1720; --panel: #13212d; --ink: #e8eef2; --ink-2: #a9b8c3; --muted: #7f909c; --rule: #263746;
+  --sea: #10202c; --land: #2a3238; --land-edge: #3c464d; --accent: #6aa8d8; --accent-soft: #18324a;
+  --high: #ef6b60; --high-soft: #3a1c1a; --med: #e3a23b; --med-soft: #3a2b12; --low: #5cc08a; --low-soft: #15301f;
+  --sanc: #b58ce0; --sanc-soft: #2b1d3b; --none: #7f909c; --div-neg: #3987e5; --div-mid: #383835; --div-pos: #e66767; --seq-lo: #184f95; --seq-hi: #cde2fb; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #0d1720; --panel: #13212d; --ink: #e8eef2; --ink-2: #a9b8c3; --muted: #7f909c; --rule: #263746;
+  --sea: #10202c; --land: #2a3238; --land-edge: #3c464d; --accent: #6aa8d8; --accent-soft: #18324a;
+  --high: #ef6b60; --high-soft: #3a1c1a; --med: #e3a23b; --med-soft: #3a2b12; --low: #5cc08a; --low-soft: #15301f;
+  --sanc: #b58ce0; --sanc-soft: #2b1d3b; --none: #7f909c; --div-neg: #3987e5; --div-mid: #383835; --div-pos: #e66767; --seq-lo: #184f95; --seq-hi: #cde2fb; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--f-body); margin: 0 }
+.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 0 40px }
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding-block: 16px; border-bottom: 1px solid var(--rule); margin-bottom: 20px }
+.brand { display: flex; align-items: baseline; gap: 10px; cursor: pointer; text-decoration: none; color: inherit }
+.brand b { font: 800 20px/1 var(--f-display); letter-spacing: .01em }
+.brand span { font: 500 12px var(--f-mono); color: var(--muted) }
+.chips { display: flex; gap: 8px; flex-wrap: wrap }
+.chip { font: 500 12px var(--f-mono); color: var(--ink-2); background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 999px; padding: 3px 10px; white-space: nowrap }
+h1, h2, h3 { font-family: var(--f-display); margin: 0; text-wrap: balance }
+h2 { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2) }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r); padding: 16px }
+.grid-home { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 20px; align-items: start }
+.grid-vessel { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 20px; align-items: start }
+@media (max-width: 900px) { .grid-home, .grid-vessel { grid-template-columns: minmax(0, 1fr) } }
+.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+button, .btn { font: 600 14px var(--f-body); border-radius: var(--r); border: 1px solid var(--rule); background: var(--panel);
+  color: var(--ink); padding: 7px 12px; cursor: pointer }
+button:hover { border-color: var(--accent) }
+button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible, .row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--panel) }
+
+/* past searches */
+.past { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px }
+.past li { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: var(--r); cursor: pointer }
+.past li:hover { background: var(--accent-soft) }
+.past .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0 }
+.past .sub { font: 12px var(--f-mono); color: var(--muted) }
+.hint { color: var(--muted); font-size: 13px; margin: 8px 0 0 }
+
+/* search */
+.search { position: relative }
+.search input { width: 100%; font: 500 18px var(--f-body); padding: 14px 16px; border: 2px solid var(--ink); border-radius: var(--r);
+  background: var(--panel); color: var(--ink) }
+.search input::placeholder { color: var(--muted) }
+.results { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); background: var(--panel); border: 1px solid var(--rule);
+  border-radius: var(--r); box-shadow: 0 8px 24px rgb(0 0 0 / .12); max-height: 360px; overflow: auto }
+.row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; cursor: pointer; border-bottom: 1px solid var(--rule) }
+.row:last-child { border-bottom: 0 }
+.row:hover, .row.sel { background: var(--accent-soft) }
+.row .nm { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.mono { font-family: var(--f-mono); font-size: 13px }
+
+/* pills */
+.pill { display: inline-flex; align-items: center; gap: 6px; font: 700 11px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase;
+  padding: 5px 8px; border-radius: 4px; white-space: nowrap }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor }
+.pill.high { color: var(--high); background: var(--high-soft) }
+.pill.medium { color: var(--med); background: var(--med-soft) }
+.pill.low { color: var(--low); background: var(--low-soft) }
+.pill.sanctioned { color: var(--sanc); background: var(--sanc-soft) }
+.pill.no_ais { color: var(--none); background: var(--sea) }
+
+/* kpis */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px }
+@media (max-width: 640px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+.kpi { border-left: 3px solid var(--rule); padding: 2px 0 2px 12px }
+.kpi b { display: block; font: 700 26px/1.1 var(--f-display); font-variant-numeric: tabular-nums }
+.kpi span { font-size: 13px; color: var(--ink-2) }
+.kpi.high { border-color: var(--high) } .kpi.medium { border-color: var(--med) } .kpi.sanctioned { border-color: var(--sanc) }
+
+/* map */
+.map { width: 100%; height: auto; display: block; background: var(--sea); border-radius: var(--r) }
+.map .land { fill: var(--land); stroke: var(--land-edge); stroke-width: .6 }
+.map .grat { stroke: var(--rule); stroke-width: .5; fill: none }
+.map .gl { fill: var(--muted); font: 10px var(--f-mono) }
+.map .dot { stroke: var(--panel); stroke-width: 1.2; cursor: pointer }
+.map .dot.low { fill: var(--low) } .map .dot.medium { fill: var(--med) } .map .dot.high { fill: var(--high) } .map .dot.sanctioned { fill: var(--sanc) }
+.map .track { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round }
+.map .ev { fill: var(--panel); stroke: var(--high); stroke-width: 2 }
+.map .ship { fill: var(--ink); stroke: var(--panel); stroke-width: 1.5 }
+.mapwrap { position: relative; touch-action: none; user-select: none }
+.mapwrap .map { cursor: grab }
+.mapwrap.dragging .map { cursor: grabbing }
+.zoomctl { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px }
+.zoomctl button { width: 30px; height: 30px; padding: 0; font: 700 16px var(--f-body); line-height: 1; background: var(--panel);
+  border: 1px solid var(--rule); border-radius: 4px; box-shadow: 0 1px 3px rgb(0 0 0 / .12) }
+.zoomhint { position: absolute; left: 8px; bottom: 8px; font: 11px var(--f-body); color: var(--muted); background: var(--panel);
+  padding: 2px 6px; border-radius: 3px; opacity: .85 }
+.map .gl, .map .grat, .map .land, .map .track, .map .dot, .map .ev, .map .ship { vector-effect: non-scaling-stroke }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); margin-top: 8px }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px }
+.tip { position: fixed; pointer-events: none; z-index: 20; background: var(--ink); color: var(--paper); font-size: 12px; padding: 6px 8px;
+  border-radius: 4px; max-width: 260px }
+
+/* tables */
+.tbl-wrap { overflow-x: auto }
+table { width: 100%; border-collapse: collapse; font-size: 14px }
+th { text-align: left; font: 600 12px var(--f-body); color: var(--muted); text-transform: uppercase; letter-spacing: .05em;
+  border-bottom: 1px solid var(--rule); padding: 6px 8px }
+td { border-bottom: 1px solid var(--rule); padding: 8px; vertical-align: top }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap }
+tbody tr { cursor: pointer } tbody tr:hover { background: var(--accent-soft) }
+
+/* vessel card */
+.vhead { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-wrap: wrap }
+.vhead h1 { font-size: 30px; font-weight: 800; letter-spacing: -.01em; line-height: 1.05 }
+.idline { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; color: var(--ink-2); font: 13px var(--f-mono) }
+.score { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; margin-top: 14px; padding: 14px; border-radius: var(--r) }
+.score.high { background: var(--high-soft) } .score.medium { background: var(--med-soft) } .score.low { background: var(--low-soft) }
+.score.sanctioned { background: var(--sanc-soft) } .score.no_ais { background: var(--sea) }
+.score .big { font: 800 40px/1 var(--f-display); font-variant-numeric: tabular-nums }
+.score .big small { font-size: 16px; font-weight: 600 }
+.meter { height: 8px; background: var(--panel); border-radius: 4px; position: relative; margin-top: 8px }
+.meter span { position: absolute; inset: 0 auto 0 0; border-radius: 4px }
+.kv { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; font-size: 14px; margin: 0 }
+.kv dt { color: var(--ink-2) } .kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600 }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: var(--r); overflow: hidden; flex-wrap: wrap }
+.seg button { border: 0; border-radius: 0; padding: 6px 10px; font-size: 13px; background: transparent }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel) }
+.action { border-left: 4px solid var(--accent); padding: 8px 12px; background: var(--accent-soft); border-radius: 0 var(--r) var(--r) 0 }
+.action b { font-family: var(--f-display) }
+.lists { display: flex; flex-direction: column; gap: 6px; font-size: 14px }
+.lists div { display: flex; justify-content: space-between; gap: 10px }
+.small { font-size: 13px; color: var(--ink-2) }
+.edit { width: 72px; font: 600 14px var(--f-mono); padding: 2px 6px; border: 1px solid var(--rule); border-radius: 4px; background: var(--panel); color: var(--ink); text-align: right }
+
+/* report */
+.drv { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 4px 12px; align-items: center; font-size: 14px }
+.bar { height: 10px; background: var(--sea); border-radius: 3px; position: relative; overflow: hidden }
+.bar span { position: absolute; top: 0; bottom: 0; border-radius: 3px }
+.timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column }
+.timeline li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--rule) }
+.timeline time { font: 12px var(--f-mono); color: var(--ink-2); padding-top: 2px }
+.timeline b { font-weight: 600 }
+.nav { display: flex; gap: 4px }
+.nav a { font: 600 14px var(--f-body); color: var(--ink-2); text-decoration: none; padding: 6px 10px; border-radius: var(--r) }
+.nav a[aria-current="page"] { background: var(--ink); color: var(--panel) }
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start }
+.grid-corr { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; align-items: start }
+@media (max-width: 900px) { .grid-2, .grid-corr { grid-template-columns: minmax(0, 1fr) } }
+.chart { width: 100%; height: auto; display: block }
+.chart .ax { stroke: var(--rule); stroke-width: 1 }
+.chart text { fill: var(--muted); font: 11px var(--f-mono) }
+.chart .lbl { fill: var(--ink-2); font: 12px var(--f-body) }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2 }
+.chart .area { fill: var(--accent-soft) }
+.chart .bar { fill: var(--accent) }
+.chart .hit { fill: transparent; cursor: crosshair }
+.heat text { font: 11px var(--f-body); fill: var(--ink-2) }
+.heat rect.cell { stroke: var(--panel); stroke-width: 1 }
+.corr-scale { display: flex; align-items: center; gap: 8px; font: 11px var(--f-mono); color: var(--muted) }
+.corr-scale i { flex: 1; height: 10px; border-radius: 3px; background: linear-gradient(90deg, var(--div-neg), var(--div-mid), var(--div-pos)) }
+.reasons { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px }
+.reasons ul { margin: 4px 0 0; padding-left: 16px }
+.chat { display: flex; flex-direction: column; gap: 10px }
+.msgs { display: flex; flex-direction: column; gap: 10px; max-height: 420px; overflow: auto }
+.msg { padding: 10px 12px; border-radius: var(--r); white-space: pre-wrap; font-size: 14px }
+.msg.user { background: var(--accent-soft); align-self: flex-end; max-width: 90% }
+.msg.bot { background: var(--sea) }
+.ask { display: flex; gap: 8px }
+.ask textarea { flex: 1; min-width: 0; font: 15px var(--f-body); padding: 10px; border: 1px solid var(--rule); border-radius: var(--r);
+  background: var(--panel); color: var(--ink); resize: vertical; min-height: 46px }
+.suggest { display: flex; gap: 6px; flex-wrap: wrap }
+.suggest button { font-size: 12px; font-weight: 500; padding: 4px 9px; border-radius: 999px }
+footer.disc { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--ink-2) }
+.back { font: 600 14px var(--f-body); color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; margin-bottom: 12px }
+.warn { background: var(--med-soft); border-left: 4px solid var(--med); padding: 10px 12px; border-radius: 0 var(--r) var(--r) 0; font-size: 14px }
+@media (prefers-reduced-motion: no-preference) { .results, .msg { animation: fade .15s ease-out } @keyframes fade { from { opacity: .4 } } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#home" id="brand"><b>Tanker Sanctions Watch</b><span>risk screening for finance and insurance</span></a>
+    <nav class="nav" aria-label="Pages"><a href="#home" id="navHome">Screening</a><a href="#analysis" id="navAnalysis">Data analysis</a></nav>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <main id="analysis" hidden>
+    <div class="stack">
+      <div class="panel">
+        <h1 style="font-size:24px">The AIS data behind the model</h1>
+        <p class="small" style="margin:6px 0 0;max-width:72ch" id="anIntro"></p>
+        <div class="kpis" id="anKpis" style="margin-top:14px"></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel"><h2>Tankers seen per sampled day</h2><div id="anDaily" style="margin-top:10px"></div>
+          <p class="small" id="anDailyNote" style="margin:6px 0 0"></p></div>
+        <div class="panel"><h2>What else is in the data: vessel types</h2><div id="anTypes" style="margin-top:10px"></div>
+          <p class="small" style="margin:6px 0 0">Class A transponders, vessel-days across all sampled days. Only tankers are scored.</p></div>
+      </div>
+      <div class="panel"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline">
+        <h2>Where tankers were seen</h2><span class="small">Position fixes per 0.1° cell, every 5 minutes, all sampled days</span></div>
+        <div id="anDensity" style="margin-top:10px"></div><div class="legend" id="anDensityLegend"></div></div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline">
+          <h2>How the behaviour signals relate: correlation heatmap</h2><span class="small" id="anCorrNote"></span></div>
+        <div class="grid-corr" style="margin-top:10px">
+          <div class="tbl-wrap" id="anCorr"></div>
+          <div class="stack" style="gap:10px"><div class="corr-scale" aria-hidden="true"><span>−1</span><i></i><span>+1</span></div>
+            <div><h3 style="font-size:14px">Strongest pairs</h3><ol class="small" id="anPairs" style="padding-left:18px;margin:6px 0 0"></ol></div>
+            <div class="action small"><b>What we changed.</b> MMSIs used and flags used move together perfectly (the flag is read from the MMSI), and length and beam almost so. We keep one of each in the model, so a ship's reasons do not double-count the same fact. The longest-gap measure tracks how often a ship was seen, so the model uses gaps inside receiver coverage instead.</div></div>
+        </div>
+      </div>
+      <section class="stack" id="sarSection" hidden>
+        <div class="panel"><h1 style="font-size:22px">Dark vessels: what satellite radar sees</h1>
+          <p class="small" style="margin:6px 0 0;max-width:78ch">Sentinel-1 radar images ships whether or not they broadcast AIS. Global Fishing Watch matches each radar detection to AIS; a detection with no AIS match is a vessel that was not broadcasting at that place and time. Detections cover vessels above roughly 15 to 20 m of every type and depend on how often the satellites passed, so trends and shares matter more than counts.</p></div>
+        <div class="panel"><h2>Strait of Hormuz: AIS transits collapsed, radar still sees the traffic</h2>
+          <p class="small" style="margin:6px 0 8px" id="sHzNote"></p><div id="sHz"></div><div class="legend" id="sHzLegend"></div></div>
+        <div class="grid-2">
+          <div class="panel"><h2>Share of radar-detected vessels with AIS off</h2><div class="tbl-wrap" style="margin-top:8px"><table id="sAreas"><thead><tr><th>Area</th><th class="num">Before Mar 2026</th><th class="num">Last 3 months</th><th class="num">Dark detections, last 3 months</th></tr></thead><tbody></tbody></table></div>
+            <p class="small" style="margin:6px 0 0">The Danish straits, with strict AIS use, show the normal baseline. No radar detections are published for the Gulf of Finland.</p></div>
+          <div class="panel"><h2 id="sCellTitle">Where the dark detections were</h2><div id="sCells" style="margin-top:8px"></div>
+            <div class="legend"><span>Fewer</span><span style="display:inline-block;width:120px;height:10px;border-radius:3px;background:linear-gradient(90deg,var(--seq-lo),var(--seq-hi))"></span><span>More radar detections with no AIS (0.05° cells)</span></div></div>
+        </div>
+      </section>
+      <section class="stack" id="gfwSection" hidden>
+        <div class="panel"><h1 style="font-size:22px">Global Fishing Watch: Europe and the Middle East</h1>
+          <p class="small" style="margin:6px 0 0;max-width:76ch" id="gIntro"></p>
+          <div class="kpis" id="gKpis" style="margin-top:14px"></div></div>
+        <div class="panel"><h2>Does it see the ships that were later sanctioned?</h2>
+          <p class="small" style="margin:6px 0 8px">Ships seen at least once before their designation date, by data source. This is the coverage that limits any model.</p>
+          <div class="tbl-wrap"><table id="gCov"><thead><tr><th>Designation batch</th><th class="num">Ships</th><th class="num">Danish AIS sample</th><th class="num">Global Fishing Watch</th></tr></thead><tbody></tbody></table></div></div>
+        <div class="grid-2">
+          <div class="panel"><h2>Coverage by sea area</h2><div class="tbl-wrap" style="margin-top:8px"><table id="gReg"><thead><tr><th>Area</th><th class="num">Vessels</th><th class="num">With IMO</th><th class="num">Candidate tankers</th><th class="num">Registry-confirmed</th></tr></thead><tbody></tbody></table></div></div>
+          <div class="panel"><h2>Where tankers called: port countries</h2><div id="gPorts" style="margin-top:10px"></div>
+            <p class="small" style="margin:6px 0 0">Distinct candidate tankers with at least one port visit in each country, worldwide, 2024 to 2026.</p></div>
+        </div>
+        <div class="grid-2">
+          <div class="panel"><h2>Loitering at reported transfer hotspots</h2><div class="tbl-wrap" style="margin-top:8px"><table id="gHot"><thead><tr><th>Area</th><th class="num">Tankers</th><th class="num">Hours</th></tr></thead><tbody></tbody></table></div>
+            <p class="small" style="margin:6px 0 0">Areas are hand-drawn boxes around reported ship-to-ship transfer sites (an assumption, not official zones).</p></div>
+          <div class="panel"><h2>Flag changes in the last 12 months</h2><div id="gChurn" style="margin-top:10px"></div>
+            <h3 style="font-size:14px;margin-top:12px">Most common current flags</h3><div class="small" id="gFlags" style="margin-top:4px"></div></div>
+        </div>
+        <div class="panel"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline">
+          <h2>Correlation of the global signals</h2><span class="small" id="gCorrNote"></span></div>
+          <div class="grid-corr" style="margin-top:10px"><div class="tbl-wrap" id="gCorr"></div>
+            <div><h3 style="font-size:14px">Strongest pairs</h3><ol class="small" id="gPairs" style="padding-left:18px;margin:6px 0 0"></ol></div></div></div>
+      </section>
+      <div class="grid-2">
+        <div class="panel"><h2>Signal coverage at the latest snapshot</h2>
+          <div class="tbl-wrap" style="margin-top:8px"><table id="anSummary"><thead><tr><th>Signal</th><th class="num">Non-zero</th><th class="num">Missing</th><th class="num">Median</th><th class="num">90th pct</th></tr></thead><tbody></tbody></table></div></div>
+        <div class="stack">
+          <div class="panel"><h2>Most broadcast tanker destinations</h2>
+            <div class="tbl-wrap" style="margin-top:8px"><table id="anDest"><thead><tr><th>Destination as broadcast</th><th class="num">Tankers</th></tr></thead><tbody></tbody></table></div></div>
+          <div class="panel"><h2>How the model works</h2><div class="small" id="anModel" style="margin-top:8px"></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <main id="home" hidden>
+    <div class="grid-home">
+      <aside class="panel">
+        <h2>Past searches</h2>
+        <ul class="past" id="past"></ul>
+        <p class="hint" id="pastHint"></p>
+      </aside>
+      <section class="stack">
+        <div class="search">
+          <label for="q" class="small" style="display:block;margin-bottom:6px">Screen a vessel by name, IMO or MMSI</label>
+          <input id="q" type="search" autocomplete="off" placeholder="e.g. 9333412 or ENIGMA" aria-controls="qres">
+          <div class="results" id="qres" role="listbox" hidden></div>
+        </div>
+        <div class="panel stack">
+          <div class="kpis" id="kpis"></div>
+        </div>
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline">
+            <h2 id="mapTitle">Last known positions</h2><span class="small" id="mapNote"></span>
+          </div>
+          <div id="fleetMap" style="margin-top:10px"></div>
+          <div class="legend"><span><i style="background:var(--high)"></i>High risk</span><span><i style="background:var(--med)"></i>Medium</span>
+            <span><i style="background:var(--low)"></i>Low</span><span><i style="background:var(--sanc)"></i>Already sanctioned</span></div>
+        </div>
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline">
+            <h2>Watchlist: 25 highest 90-day risks</h2><span class="small">Exposure at an oil price of $<span class="price"></span>/bbl</span>
+          </div>
+          <div class="tbl-wrap" style="margin-top:8px"><table id="watch"><thead><tr><th>Vessel</th><th>Flag</th><th>Size</th>
+            <th>Region</th><th>Risk</th><th class="num">90-day likelihood</th><th class="num">Exposure at risk</th><th>Last seen</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <div class="panel"><h2>Exposure by sea area</h2>
+          <p class="small" style="margin:6px 0 8px">For accumulation checks: tankers scored by the sea area where they spent most time in the last 6 months. Values are estimates from public 2026 benchmarks at an oil price of $<span class="price"></span>/bbl.</p>
+          <div class="tbl-wrap"><table id="accum"><thead><tr><th>Sea area</th><th class="num">Tankers</th><th class="num">High risk</th><th class="num">Medium</th>
+            <th class="num">Value of high and medium ships</th><th class="num">Expected loss, 90 days</th></tr></thead><tbody></tbody></table></div></div>
+        <div class="panel" id="bt"></div>
+      </section>
+    </div>
+  </main>
+
+  <main id="vessel" hidden>
+    <button class="back" id="back">← Back to search</button>
+    <div class="grid-vessel">
+      <section class="stack" id="card"></section>
+      <section class="stack">
+        <div class="panel stack" id="report"></div>
+        <div class="panel chat" id="chat">
+          <h2>Ask about this vessel</h2>
+          <p class="small" style="margin:0" id="chatNote">Answers use only the evidence on this page, with dates and sources.</p>
+          <div class="suggest" id="suggest"></div>
+          <div class="msgs" id="msgs" aria-live="polite"></div>
+          <form class="ask" id="askForm">
+            <textarea id="askBox" rows="2" placeholder="e.g. What should I ask the charterer before financing this cargo?"></textarea>
+            <div style="display:flex;flex-direction:column;gap:6px"><button class="primary" id="askBtn" type="submit">Ask</button>
+              <button type="button" id="stopBtn" hidden>Stop</button></div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="disc">
+    <b>Risk indicators for human review. Not a finding that this vessel is evading sanctions.</b>
+    <span id="foot"></span>
+  </footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script src="data/land.js"></script>
+<script src="data/vessels.js"></script>
+<script src="data/analysis.js"></script>
+<script src="data/gfw_analysis.js"></script>
+<script src="data/sar.js"></script>
+<script>
+"use strict";
+const D = window.SFP_DATA, LAND = window.SFP_LAND || [];
+const A = D.assumptions;
+const byImo = new Map(D.vessels.map(v => [v.imo, v]));
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtUsd = x => x == null ? "n/a" : x >= 1e9 ? "$" + (x/1e9).toFixed(2) + "bn" : x >= 1e6 ? "$" + (x/1e6).toFixed(1) + "m" : "$" + Math.round(x/1e3) + "k";
+const pct = p => p == null ? "n/a" : p < 0.001 ? "<0.1%" : (100*p).toFixed(p < 0.1 ? 1 : 0) + "%";
+let oilPrice = A.oil_price_usd_bbl;
+try { const s = localStorage.getItem("sfp_oil"); if (s) oilPrice = +s || oilPrice } catch (e) {}
+
+const STATUS_LABEL = { high: "High risk", medium: "Medium risk", low: "Low risk", sanctioned: "Sanctioned", no_ais: "No AIS data" };
+const keyOf = v => v.status === "unsanctioned" ? v.band : v.status;
+function exposure(v) {
+  if (!v.size || !v.size.hull_usd) return null;
+  const cargo = v.size.dwt * A.cargo_load_factor * A.barrels_per_tonne * oilPrice;
+  return { cargo, hull: v.size.hull_usd, hull_low: v.size.hull_low, hull_high: v.size.hull_high, total: cargo + v.size.hull_usd };
+}
+function exposureHtml(v, x) {
+  const F = D.insight_figures || {}, p = v.status === "unsanctioned" ? v.p90 : null, src = F.sources || {};
+  const row = (k, val, note) => `<dt>${k}${note ? `<div class="small">${note}</div>` : ""}</dt><dd>${val}</dd>`;
+  const cargoRow = row(`Cargo value: ${(v.size.dwt / 1000).toFixed(0)}k DWT × ${A.cargo_load_factor} × ${A.barrels_per_tonne} bbl/t × $<input class="edit" id="oil" type="number" min="1" step="1" value="${oilPrice}" aria-label="Oil price USD per barrel">/bbl`, fmtUsd(x.cargo), esc(src.oil || ""));
+  const hullRow = row(`Hull value: ${esc(v.size.class)}, about ${v.size.age} years old (${esc(v.size.age_basis || "")})`,
+    `${fmtUsd(x.hull)}<div class="small">${fmtUsd(x.hull_low)} to ${fmtUsd(x.hull_high)}</div>`, esc(src.hull || ""));
+  const el = (val) => p == null ? "" : row("<b>Expected loss in 90 days</b> (likelihood × exposure)", fmtUsd(p * val));
+  let body = "", note = "";
+  if (audience === "bank") {
+    const ofac = Math.max(F.ofac_ieepa_max_usd || 0, 2 * x.cargo);
+    body = cargoRow + el(x.cargo) + row("US OFAC maximum civil penalty if the deal continues after designation", fmtUsd(ofac), `greater of $${(F.ofac_ieepa_max_usd || 0).toLocaleString()} or twice the transaction, per violation (${esc(src.ofac || "")})`)
+      + row("UK OFSI maximum monetary penalty", `£1m or 50% of value (≈ ${fmtUsd(0.5 * x.cargo)})`, esc(src.ofsi || ""));
+    note = "A designation freezes the cargo and voids letters of credit tied to the vessel. Penalties shown are statutory ceilings, not expected fines; they apply only if the bank deals with the vessel after it is designated.";
+  } else if (audience === "insurer") {
+    body = hullRow + el(x.hull) + row("P&I oil-pollution liability limit (International Group)", fmtUsd(F.ig_oil_pollution_limit_usd), `overall reinsured limit up to ${fmtUsd(F.ig_overspill_limit_usd)} (${esc(src.ig || "")})`);
+    note = "Most hull and P&I policies carry sanctions clauses that suspend cover once the vessel or its owner is designated, leaving the insurer exposed on claims arising before and around designation, and on premium.";
+  } else if (audience === "reinsurer") {
+    body = hullRow + cargoRow + row("<b>Combined value at risk</b>", fmtUsd(x.total)) + el(x.total);
+    note = "Aggregate this vessel with others in the same sea area: see “Exposure by sea area” on the screening page.";
+  } else {
+    const cps = (v.evidence || []).filter(e => /sanctioned/i.test(e.type) || /sanctioned since/.test(e.text));
+    body = hullRow + el(x.hull) + row("Contacts with already-sanctioned tankers in the last 180 days", String(cps.length));
+    note = cps.length ? "Chartering, bunkering or meeting this vessel at sea exposes your fleet to the same scrutiny: " + cps.slice(0, 3).map(e => esc(e.text)).join("; ") + "." : "No contacts with already-sanctioned tankers in the data. Chartering, bunkering or ship-to-ship work with a vessel that is later designated still exposes your fleet to sanctions risk.";
+  }
+  return `<dl class="kv">${body}</dl><p class="small" style="margin:0">${note} Values are estimates from public 2026 benchmarks for the vessel's size class and age, not valuations.</p>`;
+}
+
+/* ---------- chips & footer ---------- */
+$("#chips").innerHTML = [
+  `Scored as of ${D.snapshot}`, `Lists retrieved ${D.data_date}`, `AIS ${D.ais_window[0]} to ${D.ais_window[1]}`,
+].map(t => `<span class="chip">${esc(t)}</span>`).join("");
+$("#foot").textContent = ` Sources: Danish Maritime Authority historical AIS (weekly sampled days); UK Sanctions List, EU designated vessels (DMA), US OFAC SDN; Canada, Switzerland, Australia lists, port-state detentions and GUR catalogue via OpenSanctions (CC BY-NC 4.0, non-commercial). Cached data, not live. Exposure figures are illustrative assumptions.`;
+document.querySelectorAll(".price").forEach(e => e.textContent = oilPrice);
+
+/* ---------- map ---------- */
+const BOX = D.map_box ? { lon0: D.map_box[0], lat0: D.map_box[1], lon1: D.map_box[2], lat1: D.map_box[3] } : { lon0: 2, lon1: 22, lat0: 53, lat1: 61 };
+const GLOBAL = D.scope === "global";
+const REGION_NAME = { h_baltic: "Baltic", h_north: "North Sea / Norway", h_med: "Mediterranean / Iberia", h_black_sea: "Black Sea",
+  h_red_sea: "Red Sea / Aden", h_gulf: "Persian Gulf / Oman", h_arabian: "Arabian Sea" };
+function mapSvg(box, opts) {
+  const k = Math.cos((box.lat0 + box.lat1) / 2 * Math.PI / 180);
+  const W = 800, H = Math.round(W * (box.lat1 - box.lat0) / ((box.lon1 - box.lon0) * k));
+  const x = lon => (lon - box.lon0) / (box.lon1 - box.lon0) * W;
+  const y = lat => (box.lat1 - lat) / (box.lat1 - box.lat0) * H;
+  let s = `<svg class="map" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label)}">`;
+  for (let lo = Math.ceil(box.lon0); lo <= box.lon1; lo += opts.gstep) s += `<line class="grat" x1="${x(lo)}" x2="${x(lo)}" y1="0" y2="${H}"/><text class="gl" x="${x(lo)+3}" y="${H-4}">${lo}°E</text>`;
+  for (let la = Math.ceil(box.lat0); la <= box.lat1; la += opts.gstep) s += `<line class="grat" y1="${y(la)}" y2="${y(la)}" x1="0" x2="${W}"/><text class="gl" x="3" y="${y(la)-3}">${la}°N</text>`;
+  for (const ring of LAND) s += `<path class="land" d="M${ring.map(([lo, la]) => x(lo).toFixed(1) + " " + y(la).toFixed(1)).join("L")}Z"/>`;
+  s += opts.body(x, y) + `</svg>`;
+  return s;
+}
+function showTip(e, html) { const t = $("#tip"); t.innerHTML = html; t.hidden = false; t.style.left = (e.clientX + 12) + "px"; t.style.top = (e.clientY + 12) + "px" }
+function hideTip() { $("#tip").hidden = true }
+
+/* pan & zoom for any map container holding one svg.map */
+function enableZoom(box) {
+  const svg = box.querySelector("svg.map"); if (!svg) return;
+  box.classList.add("mapwrap");
+  const vb0 = svg.viewBox.baseVal, base = [vb0.x, vb0.y, vb0.width, vb0.height];
+  let vb = base.slice(), raf = 0, moved = false;
+  const marks = [...svg.querySelectorAll("[data-r]")], texts = [...svg.querySelectorAll("text")];
+  const fs0 = texts.map(t => parseFloat(getComputedStyle(t).fontSize) || 10);
+  function apply() {
+    raf = 0; svg.setAttribute("viewBox", vb.join(" "));
+    const k = base[2] / vb[2];
+    for (const m of marks) m.setAttribute("r", (+m.dataset.r / Math.sqrt(k)).toFixed(2));
+    texts.forEach((t, i) => t.style.fontSize = (fs0[i] / k) + "px");
+  }
+  const schedule = () => { if (!raf) raf = requestAnimationFrame(apply) };
+  function zoomAt(f, cx, cy) {   // cx, cy in svg units
+    const w = Math.min(base[2], Math.max(base[2] / 40, vb[2] / f)), h = w * base[3] / base[2];
+    vb = [cx - (cx - vb[0]) * w / vb[2], cy - (cy - vb[1]) * h / vb[3], w, h]; clamp(); schedule();
+  }
+  function clamp() {
+    vb[0] = Math.min(Math.max(vb[0], base[0]), base[0] + base[2] - vb[2]);
+    vb[1] = Math.min(Math.max(vb[1], base[1]), base[1] + base[3] - vb[3]);
+  }
+  function toSvg(clientX, clientY) {
+    const r = svg.getBoundingClientRect();
+    return [vb[0] + (clientX - r.left) / r.width * vb[2], vb[1] + (clientY - r.top) / r.height * vb[3]];
+  }
+  svg.addEventListener("wheel", e => { e.preventDefault(); const [x, y] = toSvg(e.clientX, e.clientY); zoomAt(e.deltaY < 0 ? 1.25 : 0.8, x, y) }, { passive: false });
+  const pts = new Map(); let last = null, pinch0 = null;
+  svg.addEventListener("pointerdown", e => { pts.set(e.pointerId, [e.clientX, e.clientY]); svg.setPointerCapture(e.pointerId); moved = false;
+    last = [e.clientX, e.clientY]; if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]) } });
+  svg.addEventListener("pointermove", e => {
+    if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, [e.clientX, e.clientY]);
+    const r = svg.getBoundingClientRect();
+    if (pts.size === 2 && pinch0) {
+      const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      const [x, y] = toSvg((a[0] + b[0]) / 2, (a[1] + b[1]) / 2); zoomAt(d / pinch0, x, y); pinch0 = d; moved = true; return;
+    }
+    const dx = e.clientX - last[0], dy = e.clientY - last[1];
+    if (Math.abs(dx) + Math.abs(dy) > 3) { moved = true; box.classList.add("dragging") }
+    if (moved) { vb[0] -= dx / r.width * vb[2]; vb[1] -= dy / r.height * vb[3]; clamp(); schedule(); last = [e.clientX, e.clientY] }
+  });
+  const end = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch0 = null; box.classList.remove("dragging") };
+  svg.addEventListener("pointerup", end); svg.addEventListener("pointercancel", end);
+  svg.addEventListener("click", e => { if (moved) { e.stopPropagation(); e.preventDefault() } }, true);
+  const ctl = document.createElement("div"); ctl.className = "zoomctl";
+  ctl.innerHTML = `<button type="button" aria-label="Zoom in">+</button><button type="button" aria-label="Zoom out">−</button><button type="button" aria-label="Reset view" style="font-size:12px">⟲</button>`;
+  const [bin, bout, brst] = ctl.querySelectorAll("button");
+  bin.onclick = () => zoomAt(1.6, vb[0] + vb[2] / 2, vb[1] + vb[3] / 2);
+  bout.onclick = () => zoomAt(1 / 1.6, vb[0] + vb[2] / 2, vb[1] + vb[3] / 2);
+  brst.onclick = () => { vb = base.slice(); schedule() };
+  box.append(ctl);
+  const hint = document.createElement("div"); hint.className = "zoomhint"; hint.textContent = "Scroll or pinch to zoom, drag to move";
+  box.append(hint);
+}
+function fleetMap() {
+  const pts = D.vessels.filter(v => v.last_pos && v.last_pos.lat != null)
+    .sort((a, b) => (a.status === "sanctioned") - (b.status === "sanctioned") || (a.p90 ?? 0) - (b.p90 ?? 0));
+  $("#mapNote").textContent = GLOBAL ? `${pts.length.toLocaleString()} tankers, latest daily position in the last 30 days` : `${pts.length} tankers, last sampled day each`;
+  $("#mapTitle").textContent = GLOBAL ? "Last known positions, Europe and the Middle East" : "Last known positions, Danish straits";
+  $("#fleetMap").innerHTML = mapSvg(BOX, { label: "Map of tanker positions", gstep: GLOBAL ? 10 : 2, body: (x, y) =>
+    pts.map(v => `<circle class="dot ${keyOf(v)}" data-imo="${esc(v.imo)}" cx="${x(v.last_pos.lon).toFixed(1)}" cy="${y(v.last_pos.lat).toFixed(1)}" r="${keyOf(v) === "low" ? 3 : 5}" data-r="${keyOf(v) === "low" ? 3 : 5}"/>`).join("") });
+  enableZoom($("#fleetMap"));
+  $("#fleetMap").querySelectorAll(".dot").forEach(c => {
+    const v = byImo.get(c.dataset.imo);
+    c.addEventListener("mousemove", e => showTip(e, `<b>${esc(v.name)}</b> · IMO ${esc(v.imo)}<br>${esc(STATUS_LABEL[keyOf(v)])}${v.p90 != null ? " · " + pct(v.p90) : ""}<br>Last seen ${esc(v.last_seen)}`));
+    c.addEventListener("mouseleave", hideTip);
+    c.addEventListener("click", () => { hideTip(); openVessel(v.imo) });
+  });
+}
+
+/* ---------- home ---------- */
+function past() { try { return JSON.parse(localStorage.getItem("sfp_past") || "[]") } catch (e) { return [] } }
+function remember(imo) { try { const p = past().filter(i => i !== imo); p.unshift(imo); localStorage.setItem("sfp_past", JSON.stringify(p.slice(0, 15))) } catch (e) {} }
+function renderPast() {
+  let ids = past().filter(i => byImo.has(i)), hint = "";
+  if (!ids.length) {
+    ids = D.vessels.filter(v => v.status === "unsanctioned").sort((a, b) => b.p90 - a.p90).slice(0, 6).map(v => v.imo);
+    hint = "No searches yet. These are the highest-risk tankers right now, as examples.";
+  }
+  $("#pastHint").textContent = hint;
+  $("#past").innerHTML = ids.map(i => { const v = byImo.get(i); return `<li tabindex="0" data-imo="${esc(i)}"><div style="min-width:0;flex:1"><div class="nm">${esc(v.name || "Unknown name")}</div>
+    <div class="sub">IMO ${esc(i)}</div></div><span class="pill ${keyOf(v)}">${esc(STATUS_LABEL[keyOf(v)])}</span></li>` }).join("");
+  $("#past").querySelectorAll("li").forEach(li => { li.onclick = () => openVessel(li.dataset.imo); li.onkeydown = e => { if (e.key === "Enter") openVessel(li.dataset.imo) } });
+}
+function renderKpis() {
+  const u = D.vessels.filter(v => v.status === "unsanctioned");
+  const n = b => u.filter(v => v.band === b).length;
+  const s = D.vessels.filter(v => v.status === "sanctioned").length;
+  const ear = u.reduce((t, v) => t + (exposure(v) ? v.p90 * exposure(v).total : 0), 0);
+  $("#kpis").innerHTML = [
+    ["", u.length, "unsanctioned tankers scored"], ["high", n("high"), "high risk: top 1%"],
+    ["medium", n("medium"), "medium risk: next 4%"], ["sanctioned", s, "already sanctioned, still seen"],
+  ].map(([c, b, t]) => `<div class="kpi ${c}"><b>${b.toLocaleString()}</b><span>${t}</span></div>`).join("") +
+  `<p class="small" style="grid-column:1/-1;margin:4px 0 0">Expected exposure at risk across scored tankers: <b>${fmtUsd(ear)}</b> (likelihood × cargo and hull value, illustrative).</p>`;
+}
+function renderWatch() {
+  const rows = D.vessels.filter(v => v.status === "unsanctioned").sort((a, b) => b.p90 - a.p90).slice(0, 25);
+  $("#watch tbody").innerHTML = rows.map(v => { const x = exposure(v); return `<tr data-imo="${esc(v.imo)}" tabindex="0"><td><b>${esc(v.name)}</b><div class="mono" style="color:var(--muted)">IMO ${esc(v.imo)}</div></td>
+    <td>${esc(v.flag)}</td><td>${esc(v.size?.class ?? "n/a")}</td><td>${esc(REGION_NAME[v.main_region] || (GLOBAL ? "" : "Danish straits"))}</td><td><span class="pill ${v.band}">${esc(v.band)}</span></td>
+    <td class="num">${pct(v.p90)}</td><td class="num">${x ? fmtUsd(v.p90 * x.total) : "n/a"}</td><td class="mono">${esc(v.last_seen)}</td></tr>` }).join("");
+  $("#watch tbody").querySelectorAll("tr").forEach(tr => { tr.onclick = () => openVessel(tr.dataset.imo); tr.onkeydown = e => { if (e.key === "Enter") openVessel(tr.dataset.imo) } });
+}
+function renderAccum() {
+  const g = {};
+  for (const v of D.vessels) {
+    if (v.status !== "unsanctioned") continue;
+    const k = REGION_NAME[v.main_region] || "Other"; const a = g[k] ||= { n: 0, hi: 0, med: 0, val: 0, el: 0 };
+    const x = exposure(v); a.n++; if (v.band === "high") a.hi++; if (v.band === "medium") a.med++;
+    if (x) { if (v.band !== "low") a.val += x.total; a.el += v.p90 * x.total }
+  }
+  $("#accum tbody").innerHTML = Object.entries(g).sort((a, b) => b[1].el - a[1].el).map(([k, a]) => `<tr style="cursor:default"><td>${esc(k)}</td>
+    <td class="num">${a.n.toLocaleString()}</td><td class="num">${a.hi}</td><td class="num">${a.med}</td><td class="num">${fmtUsd(a.val)}</td><td class="num">${fmtUsd(a.el)}</td></tr>`).join("");
+}
+function renderBacktest() {
+  const b = D.backtest; if (!b) { $("#bt").hidden = true; return }
+  const models = [["random", "Random order"], ["flag_rule", "Flag-only rule"], ["rule_score", "Rule score"], ["logreg", "Logistic regression"], ["lightgbm", "Gradient boosting (this model)"]];
+  const rows = Object.entries(b.test_snapshots || {});
+  const uk = Object.entries(b.uk_test_batches || {});
+  $("#bt").innerHTML = `<h2>How well does it work? Backtest</h2>
+    <p class="small" style="margin:6px 0 10px">Trained only on data before 2026-05-01 (${b.train.rows.toLocaleString()} tanker-months, ${b.train.positives.toLocaleString()} sanctioned within 90 days). Each later month, every unsanctioned tanker is ranked; a hit is a ship in the top 50 or 100 that was sanctioned for the first time, by the UK, EU or US, within the next 90 days (labels as known on ${esc(D.data_date)}, so recent months are incomplete).</p>
+    <div class="tbl-wrap"><table><thead><tr><th>Scored on</th><th class="num">Tankers</th><th class="num">Newly sanctioned</th>${models.map(m => `<th class="num">${m[1]}<br>top 50 / 100 · PR-AUC</th>`).join("")}</tr></thead><tbody>
+    ${rows.map(([k, m]) => `<tr style="cursor:default"><td class="mono">${esc(k)}</td><td class="num">${m.population.toLocaleString()}</td><td class="num">${m.positives_in_population}</td>
+      ${models.map(([id]) => `<td class="num">${m[id]["hits@50"]} / ${m[id]["hits@100"]} · ${m[id].pr_auc == null ? "n/a" : m[id].pr_auc.toFixed(3)}</td>`).join("")}</tr>`).join("")}
+    </tbody></table></div>
+    ${uk.length ? `<p class="small" style="margin:10px 0 0">UK designation batches: ${uk.map(([k, m]) => `${esc(k.split(" ")[0])}: ${m.batch_size} ships, of which ${m.positives_in_population} were not already on another list and in the scored population`).join("; ")}. Ships the EU or US had already listed count as sanctioned, not as predictions.</p>` : ""}`;
+}
+
+/* search */
+const idx = D.vessels.map(v => ({ v, s: [v.name, v.imo, v.mmsi, ...(v.names_seen || []), ...(v.mmsis_seen || [])].filter(Boolean).join(" ").toUpperCase() }));
+let sel = -1;
+function search(q) {
+  q = q.trim().toUpperCase(); const box = $("#qres");
+  if (q.length < 2) { box.hidden = true; return }
+  const hits = idx.filter(r => r.s.includes(q)).sort((a, b) => (b.v.imo === q) - (a.v.imo === q) || (b.v.p90 ?? -1) - (a.v.p90 ?? -1)).slice(0, 12);
+  sel = -1;
+  box.innerHTML = hits.length ? hits.map((r, i) => `<div class="row" role="option" data-imo="${esc(r.v.imo)}" data-i="${i}"><span class="nm">${esc(r.v.name || "Unknown name")}</span>
+    <span class="mono" style="color:var(--muted)">IMO ${esc(r.v.imo)}</span><span class="pill ${keyOf(r.v)}">${esc(STATUS_LABEL[keyOf(r.v)])}</span></div>`).join("")
+    : `<div class="row" style="cursor:default">No tanker matches "${esc(q)}". It may never have been seen in the sampled Danish AIS and is on no list we hold.</div>`;
+  box.hidden = false;
+  box.querySelectorAll(".row[data-imo]").forEach(r => r.onclick = () => openVessel(r.dataset.imo));
+}
+$("#q").addEventListener("input", e => search(e.target.value));
+$("#q").addEventListener("keydown", e => {
+  const rows = [...$("#qres").querySelectorAll(".row[data-imo]")];
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); sel = Math.max(0, Math.min(rows.length - 1, sel + (e.key === "ArrowDown" ? 1 : -1))); rows.forEach((r, i) => r.classList.toggle("sel", i === sel)) }
+  if (e.key === "Enter" && rows.length) openVessel(rows[Math.max(sel, 0)].dataset.imo);
+  if (e.key === "Escape") $("#qres").hidden = true;
+});
+document.addEventListener("click", e => { if (!e.target.closest(".search")) $("#qres").hidden = true });
+
+/* ---------- vessel page ---------- */
+let audience = "bank";
+try { audience = localStorage.getItem("sfp_aud") || "bank" } catch (e) {}
+const AUD = {
+  bank: { label: "Bank", exp: "cargo", what: "Trade-finance exposure is the cargo value financed on this voyage." },
+  insurer: { label: "Insurer / P&I", exp: "hull", what: "Hull exposure is the insured value of the vessel; P&I liabilities can be far larger." },
+  reinsurer: { label: "Reinsurer", exp: "total", what: "Aggregate exposure combines cargo and hull values for accumulation checks." },
+  shipping: { label: "Shipping company", exp: "total", what: "Counterparty exposure if this vessel is chartered, bunkered or met for a transfer." },
+};
+function action(v) {
+  if (v.status === "sanctioned") return ["Do not proceed", "This vessel is on a sanctions list. Dealing with it may breach sanctions; refer to your sanctions compliance team."];
+  if (v.status === "no_ais") return ["Not enough data to assess", "No AIS history in the sampled Danish waters. Use the list status below and request voyage history from the counterparty."];
+  if (v.band === "high") return ["Escalate before proceeding", "Request itemised voyage history and port calls for the last 12 months, ship-to-ship transfer attestations, current P&I certificate and ownership chain. Consider declining."];
+  if (v.band === "medium") return ["Extra checks", "Request voyage history and attestation that no ship-to-ship transfers with sanctioned vessels took place. Re-screen before each drawdown."];
+  return ["Proceed with standard checks", "No elevated risk indicators in the sampled data. Standard KYC and list screening still apply."];
+}
+function historyHtml(h) {
+  const idr = h.identity || [], pr = h.ports || [], gr = h.gaps || [], dr = h.detentions || [];
+  if (!idr.length && !pr.length && !gr.length && !dr.length) return "";
+  const t = (head, rows) => `<div class="tbl-wrap" style="margin-top:6px"><table><thead><tr>${head.map(x => `<th>${x}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div><h2>Vessel history</h2>
+    ${idr.length ? `<h3 style="font-size:14px;margin-top:8px">Identities broadcast (name, flag, MMSI)</h3>` + t(["From", "To", "Name", "Flag", "MMSI"],
+      idr.slice().reverse().map(x => `<tr style="cursor:default"><td class="mono">${esc(x.from || "")}</td><td class="mono">${esc(x.to || "")}</td><td>${esc(x.name || "")}</td><td>${esc(x.flag || "")}</td><td class="mono">${esc(x.mmsi || "")}</td></tr>`).join("")) : ""}
+    ${pr.length ? `<h3 style="font-size:14px;margin-top:12px">Port calls, 2024 to 2026 (latest ${pr.length})</h3>` + t(["Arrived", "Port", "Country", "Hours"],
+      pr.slice().reverse().map(x => `<tr style="cursor:default"><td class="mono">${esc(x.date)}</td><td>${esc(x.port || "")}</td><td>${esc(ISO[x.country] || x.country || "")}</td><td class="num">${x.hours ?? ""}</td></tr>`).join("")) : ""}
+    ${gr.length ? `<h3 style="font-size:14px;margin-top:12px">AIS gaps of a day or more</h3>` + t(["Started", "Hours", "Judged intentional"],
+      gr.slice().reverse().map(x => `<tr style="cursor:default"><td class="mono">${esc(x.date)}</td><td class="num">${x.hours}</td><td>${x.intentional ? "yes" : x.intentional === false ? "no" : "n/a"}</td></tr>`).join("")) : ""}
+    ${dr.length ? `<h3 style="font-size:14px;margin-top:12px">Port-state detentions</h3>` + t(["Date", "Authority", "Reason"],
+      dr.map(x => `<tr style="cursor:default"><td class="mono">${esc(x.date || "")}</td><td>${esc(x.authority || "")}</td><td class="small">${esc(x.reason || "")}</td></tr>`).join("")) : ""}
+    <p class="small" style="margin:6px 0 0">Sources: Global Fishing Watch identity and events (non-commercial licence); detentions via OpenSanctions (Tokyo, Black Sea and Abuja MoU).</p></div>`;
+}
+function openVessel(imo) { remember(imo); location.hash = "vessel-" + imo; }
+const shardCache = new Map();
+async function loadDetail(v) {
+  if (!D.sharded || v._full) return v;
+  if (!shardCache.has(v.shard)) {
+    const k = String(v.shard).padStart(2, "0");
+    shardCache.set(v.shard, fetch(`data/detail/${k}.json`).then(r => { if (!r.ok) throw new Error(r.status); return r.json() }));
+  }
+  try { const d = (await shardCache.get(v.shard))[v.imo]; if (d) Object.assign(v, d, { _full: true }) }
+  catch (e) { shardCache.delete(v.shard); v._loadError = true }
+  return v;
+}
+async function renderVessel(imo) {
+  let v = byImo.get(imo);
+  if (!v) { location.hash = "home"; return }
+  if (D.sharded && !v._full) {
+    $("#card").innerHTML = `<div class="panel"><p class="small" style="margin:0">Loading ${esc(v.name || "vessel")} (IMO ${esc(v.imo)})...</p></div>`;
+    $("#report").innerHTML = ""; $("#home").hidden = true; $("#analysis").hidden = true; $("#vessel").hidden = false;
+    v = await loadDetail(v);
+    if (location.hash !== "#vessel-" + imo) return;
+    if (v._loadError) { $("#card").innerHTML = `<div class="panel warn">The vessel details could not be loaded. Check your connection and open the vessel again.</div>`; return }
+  }
+  const k = keyOf(v), x = exposure(v), [act, actTxt] = action(v);
+  const sizeTxt = v.size ? `${v.size.class} · ~${(v.size.dwt/1000).toFixed(0)}k DWT (est. from ${v.size.basis || v.length + " m length"})` : "Size unknown";
+  const big = v.status === "unsanctioned" ? `${pct(v.p90)}<small> in 90 days</small>` : v.status === "sanctioned" ? `<small>since</small> ${esc(v.sanctioned_on)}` : `<small>no AIS</small>`;
+  const BS = D.band_stats, bsb = BS && v.band ? BS.bands[v.band] : null;
+  const nScored = D.vessels.filter(u => u.status === "unsanctioned").length;
+  const sub = v.status === "unsanctioned" ? (v.top_pct != null
+      ? `Ranked in the top ${v.top_pct < 1 ? v.top_pct.toFixed(1) : Math.ceil(v.top_pct)}% of ${nScored.toLocaleString()} tankers scored · ${v.rel.toFixed(1)}× the average likelihood (${pct(D.base_rate_90d)})`
+      : `${v.rel.toFixed(1)}× the average tanker (${pct(D.base_rate_90d)})`) : v.status === "sanctioned" ? "Already sanctioned: prediction not needed" : (v.sanctioned_on ? `On a sanctions list since ${esc(v.sanctioned_on)}` : "Not seen in sampled Danish AIS");
+  const meterW = v.status === "unsanctioned" ? (v.top_pct != null ? Math.max(2, 100 - v.top_pct) : Math.min(100, v.rel / 10 * 100)) : 0;
+  const bandEvidence = (v.status === "unsanctioned" && bsb && BS.base_rate) ? `<p class="small" style="margin:8px 0 0"><b>Track record:</b> in ${BS.months.length} past months the model had not seen (${esc(BS.months[0])} to ${esc(BS.months.at(-1))}), ${(100 * bsb.rate).toFixed(1)}% of tankers in the ${esc(v.band)} band (${bsb.sanctioned} of ${bsb.tanker_months.toLocaleString()}) were sanctioned within 90 days, against ${(100 * BS.base_rate).toFixed(2)}% of all tankers (${(bsb.rate / BS.base_rate).toFixed(0)}×).</p>` : "";
+  const trendSvg = (v.trend || []).length > 1 ? (() => {
+    const t = v.trend, W = 300, H = 70, L = 4, R = 4, T = 8, B = 16, n = t.length;
+    const X = i => L + i / (n - 1) * (W - L - R), Y = p => T + (p / 100) * (H - T - B);   // top % (0 = riskiest) drawn at top
+    return `<div style="margin-top:8px"><div class="small">Risk rank over the months the model had not seen (higher = riskier)</div>
+      <svg class="chart" viewBox="0 0 ${W} ${H}" style="max-width:340px" role="img" aria-label="Risk rank trend">
+      <line class="ax" x1="${L}" x2="${W - R}" y1="${Y(5)}" y2="${Y(5)}"/><text x="${W - R}" y="${Y(5) - 2}" text-anchor="end">top 5%</text>
+      <path class="line" d="M${t.map((p, i) => X(i).toFixed(1) + " " + Y(Math.min(100, p[1])).toFixed(1)).join("L")}"/>
+      ${t.map((p, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(Math.min(100, p[1])).toFixed(1)}" r="3" fill="var(--accent)"><title>${p[0]}: top ${p[1]}%</title></circle>`).join("")}
+      <text x="${L}" y="${H - 3}">${esc(t[0][0])}</text><text x="${W - R}" y="${H - 3}" text-anchor="end">${esc(t.at(-1)[0])}</text></svg></div>`;
+  })() : "";
+  const expVal = x ? (AUD[audience].exp === "cargo" ? x.cargo : AUD[audience].exp === "hull" ? x.hull : x.total) : null;
+  const lists = (v.lists || []);
+  $("#card").innerHTML = `
+    <div class="panel">
+      <div class="vhead"><div style="min-width:0"><h1>${esc(v.name || "Unknown name")}</h1>
+        <div class="idline"><span>IMO ${esc(v.imo)}</span>${v.mmsi ? `<span>MMSI ${esc(v.mmsi)}</span>` : ""}${v.flag ? `<span>Flag ${esc(v.flag)} (from MMSI)</span>` : ""}</div>
+        <div class="small" style="margin-top:4px">${esc(sizeTxt)}</div></div>
+        <span class="pill ${k}">${esc(STATUS_LABEL[k])}</span></div>
+      <div class="score ${k}"><div class="big">${big}</div><div><div class="small">${sub}</div>
+        ${v.status === "unsanctioned" ? `<div class="meter" aria-hidden="true"><span style="width:${meterW}%;background:var(--${k === "high" ? "high" : k === "medium" ? "med" : "low"})"></span></div>` : ""}
+        <div class="small" style="margin-top:6px">Model ${esc(D.snapshot)} · trained on ${D.model.rows.toLocaleString()} tanker-months</div></div></div>
+      ${bandEvidence}${trendSvg}
+    </div>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><h2>Location</h2>
+        <span class="small">${v.last_pos ? `Last ${v.last_pos.source ? "position cell" : "fix"} ${esc(v.last_pos.ts.slice(0, 16))}${v.last_pos.source ? "" : " UTC"}${v.last_pos.destination ? " · destination " + esc(v.last_pos.destination) : ""}` : "No position data"}</span></div>
+      <div id="vMap" style="margin-top:8px"></div>
+      ${v.last_pos ? `<div class="legend">${v.track?.length ? '<span><i style="background:var(--accent)"></i>Track on last sampled day</span>' : ""}<span><i style="background:var(--ink)"></i>Last position</span><span><i style="background:var(--panel);border:2px solid var(--high)"></i>Dated evidence</span></div>` : ""}
+    </div>
+    <div class="panel stack">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h2>Economic exposure</h2>
+        <div class="seg" role="group" aria-label="View as">${Object.entries(AUD).map(([id, a]) => `<button type="button" data-aud="${id}" aria-pressed="${id === audience}">${a.label}</button>`).join("")}</div></div>
+      ${x ? exposureHtml(v, x)       : `<p class="small" style="margin:0">No size data, so no exposure estimate.</p>`}
+    </div>
+    <div class="panel"><h2>Recommended action</h2><div class="action" style="margin-top:8px"><b>${esc(act)}.</b> ${esc(actTxt)}</div></div>
+    <div class="panel"><h2>List status (checked ${esc(D.data_date)})</h2>
+      <div class="lists" style="margin-top:8px">${lists.length ? lists.map(l => `<div><span>${esc(l.list)}</span><span class="mono">${esc(l.date || "undated")}</span></div>`).join("") : `<div><span>Not on the UK, EU, US, Canada, Switzerland or Australia lists, and no port-state detentions held</span></div>`}</div></div>`;
+
+  if (v.last_pos) {
+    const pts = [[v.last_pos.lat, v.last_pos.lon], ...(v.track || []), ...((v.evidence || []).filter(e => e.lat != null).map(e => [e.lat, e.lon]))];
+    const la = pts.map(p => p[0]), lo = pts.map(p => p[1]);
+    const pad = GLOBAL ? 2 : 0.6, b = { lat0: Math.min(...la) - pad, lat1: Math.max(...la) + pad, lon0: Math.min(...lo) - pad * 1.8, lon1: Math.max(...lo) + pad * 1.8 };
+    if (b.lat1 - b.lat0 < 2) { const c = (b.lat0 + b.lat1) / 2; b.lat0 = c - 1; b.lat1 = c + 1 }
+    if (b.lon1 - b.lon0 < 3.6) { const c = (b.lon0 + b.lon1) / 2; b.lon0 = c - 1.8; b.lon1 = c + 1.8 }
+    $("#vMap").innerHTML = mapSvg(b, { label: "Map of this vessel's track", gstep: (b.lon1 - b.lon0) > 20 ? 10 : (b.lon1 - b.lon0) > 8 ? 5 : 1, body: (X, Y) =>
+      (v.track?.length > 1 ? `<path class="track" d="M${v.track.map(([a, o]) => X(o).toFixed(1) + " " + Y(a).toFixed(1)).join("L")}"/>` : "") +
+      (v.evidence || []).filter(e => e.lat != null).map((e, i) => `<circle class="ev" data-i="${i}" cx="${X(e.lon).toFixed(1)}" cy="${Y(e.lat).toFixed(1)}" r="6" data-r="6"/>`).join("") +
+      `<circle class="ship" cx="${X(v.last_pos.lon).toFixed(1)}" cy="${Y(v.last_pos.lat).toFixed(1)}" r="7" data-r="7"/>` });
+    enableZoom($("#vMap"));
+    $("#vMap").querySelectorAll(".ev").forEach(c => { const e = v.evidence.filter(e => e.lat != null)[+c.dataset.i];
+      c.addEventListener("mousemove", ev => showTip(ev, `<b>${esc(e.type)}</b> · ${esc(e.date)}<br>${esc(e.text)}`)); c.addEventListener("mouseleave", hideTip) });
+  }
+  $("#card").querySelectorAll("[data-aud]").forEach(bn => bn.onclick = () => { audience = bn.dataset.aud; try { localStorage.setItem("sfp_aud", audience) } catch (e) {} renderVessel(imo) });
+  const oil = $("#oil"); if (oil) oil.onchange = () => { const p = +oil.value; if (p > 0) { oilPrice = p; try { localStorage.setItem("sfp_oil", p) } catch (e) {} document.querySelectorAll(".price").forEach(e => e.textContent = p); renderVessel(imo) } };
+
+  /* report */
+  const drv = v.drivers || [];
+  const mx = Math.max(0.01, ...drv.map(d => Math.abs(d.contrib)));
+  const ev = v.evidence || [];
+  const why = v.reasons || [];
+  $("#report").innerHTML = `
+    ${v.status === "unsanctioned" ? `<div><h2>${v.band === "low" ? "Signals that raise the score" : "Why this vessel is flagged"}</h2>
+      ${why.length ? `<ol class="reasons">${why.map(r => `<li><b>${esc(r.title)}.</b> ${esc(r.text)}
+        ${r.evidence?.length ? `<ul>${r.evidence.map(e => `<li class="small"><span class="mono">${esc(e.date)}</span> ${esc(e.text)} (${esc(e.source || "DMA AIS")})</li>`).join("")}</ul>` : ""}</li>`).join("")}</ol>`
+      : `<p class="small" style="margin:8px 0 0">No signal raises this vessel's score above the average tanker.</p>`}
+      <p class="small" style="margin:8px 0 0">Comparisons use tankers ${GLOBAL ? "present in Europe and the Middle East" : "seen in Danish waters"} in the ${GLOBAL ? "6 months" : "180 days"} before ${esc(D.snapshot)} and sanctions dated before then.</p></div>` : ""}
+    <div><h2>Signal weights</h2>
+      ${v.status !== "unsanctioned" ? `<p class="small" style="margin:8px 0 0">${v.status === "sanctioned" ? "This vessel is already sanctioned, so it is not scored." : "No AIS behaviour in the sampled Danish waters, so the model cannot score it. Failure case: the tool shows this instead of a low score."}</p>` :
+      `<p class="small" style="margin:6px 0 10px">Signals that moved this vessel's score most, compared with an average tanker. Bars right of centre raise the risk.</p>
+      <div class="drv">${drv.map(d => { const w = Math.abs(d.contrib) / mx * 50; const up = d.contrib > 0;
+        return `<div>${esc(d.label)} <span class="mono" style="color:var(--muted)">= ${d.value == null ? "n/a" : esc(d.value)}</span></div>
+        <div class="bar" title="${up ? "raises" : "lowers"} risk"><span style="${up ? `left:50%;width:${w}%;background:var(--high)` : `right:50%;width:${w}%;background:var(--low)`}"></span><span style="left:50%;width:1px;background:var(--muted)"></span></div>` }).join("")}</div>`}
+    </div>
+    <div><h2>Dated evidence</h2>
+      ${ev.length ? `<ul class="timeline" style="margin-top:6px">${ev.map(e => `<li><time>${esc(e.date)}</time><div><b>${esc(e.type)}.</b> ${esc(e.text)} <span class="small">(${esc(e.source || "DMA AIS")})</span></div></li>`).join("")}</ul>`
+      : `<p class="small" style="margin:8px 0 0">${v.status === "no_ais" ? "No AIS records for this vessel in the sampled window." : "No notable events in the sampled AIS days. This is weak evidence of low risk: the ship was only observed on the days listed below."}</p>`}
+    </div>
+    ${v.history ? historyHtml(v.history) : ""}
+    <div><h2>Coverage</h2><p class="small" style="margin:6px 0 0">${v.coverage ? `${v.coverage.hours.toLocaleString()} hours of AIS presence in the 6 months before ${esc(D.snapshot)}${Object.keys(v.coverage.regions || {}).length ? ": " + Object.entries(v.coverage.regions).sort((a, b) => b[1] - a[1]).map(([k, h]) => `${REGION_NAME[k]} ${h.toLocaleString()} h`).join(", ") : ""}. Port visits, gaps and loitering are worldwide (Global Fishing Watch).${v.coverage.dma_days ? ` Also seen on ${v.coverage.dma_days} sampled Danish AIS days.` : ""} ${v.tanker_status === "unverified" ? "<b>Registry does not confirm this is a tanker.</b>" : ""}` : v.days_seen ? `Seen on ${v.days_seen} of ${D.ais_days_total} sampled AIS days (one day per week), ${esc(v.first_seen)} to ${esc(v.last_seen)}, in Danish waters only. ${v.days_seen <= 2 ? "<b>Very little data:</b> treat the score with caution." : ""} Behaviour elsewhere in the world is not visible to this model.` : "No sampled AIS coverage for this vessel."}</p></div>`;
+  resetChat(v);
+  $("#home").hidden = true; $("#vessel").hidden = false; window.scrollTo(0, 0);
+}
+
+/* ---------- ask Claude ---------- */
+let sample = null, turns = [], ctl = null, chatImo = null;
+const RULES = v => `You are a sanctions-risk analyst assistant inside a screening tool for banks, insurers and shipping companies. Answer the user's question about one vessel using ONLY the JSON evidence below. Rules: cite dates and sources for every fact; if the evidence does not answer the question, say so and say what document or check would; never call the vessel part of a "shadow fleet" or say it is evading sanctions; describe risk indicators for human review; stay neutral on the conflict; keep answers under 180 words; plain text, short paragraphs or hyphen bullets.
+
+Context: model snapshot ${D.snapshot}; lists retrieved ${D.data_date}; AIS is weekly-sampled Danish Maritime Authority data covering Danish waters only; the probability is the model's 90-day likelihood of a UK, EU or US sanction (base rate ${pct(D.base_rate_90d)}); exposure values are illustrative assumptions (oil $${oilPrice}/bbl).
+
+VESSEL EVIDENCE (JSON):
+${JSON.stringify({ ...v, track: undefined, exposure_usd: exposure(v) }).slice(0, 30000)}`;
+function resetChat(v) {
+  if (chatImo === v.imo) return;
+  chatImo = v.imo; turns = []; $("#msgs").innerHTML = ""; ctl?.abort();
+  const qs = v.status === "unsanctioned" ? ["Summarise the main risk indicators", "What should I ask the counterparty before financing?", "How reliable is this score?"]
+    : v.status === "sanctioned" ? ["Which lists is it on and since when?", "What does this mean for an existing insurance policy?"] : ["Why can this vessel not be scored?", "What checks can replace the missing data?"];
+  $("#suggest").innerHTML = qs.map(q => `<button type="button">${esc(q)}</button>`).join("");
+  $("#suggest").querySelectorAll("button").forEach(b => b.onclick = () => { $("#askBox").value = b.textContent; ask() });
+}
+function addMsg(role, text) { const d = document.createElement("div"); d.className = "msg " + role; d.textContent = text; $("#msgs").append(d); $("#msgs").scrollTop = 1e9; return d }
+const ERR = { not_granted: "Asking Claude is not allowed for this page.", sampling_disabled: "Claude is not available for this account.", rate_limited: "Too many questions at once. Wait a moment and ask again.",
+  session_expired: "Sign in again to ask questions.", refused: "Claude declined that question. Try asking it differently.", prompt_too_large: "Too much evidence to send. Ask a narrower question." };
+async function ask() {
+  const q = $("#askBox").value.trim(); if (!q || !sample) return;
+  const v = byImo.get(chatImo); $("#askBox").value = "";
+  addMsg("user", q); turns.push({ role: "user", content: q });
+  const out = addMsg("bot", "Thinking..."); ctl = new AbortController();
+  $("#askBtn").disabled = true; $("#stopBtn").hidden = false;
+  try {
+    const { text } = await sample([{ role: "user", content: RULES(v) }, ...turns.slice(-8)], { cache: false, signal: ctl.signal, onText: ({ text }) => { out.textContent = text } });
+    turns.push({ role: "assistant", content: text });
+  } catch (e) {
+    out.textContent = e.text || "";
+    if (e.code !== "cancelled") { const n = document.createElement("div"); n.className = "small"; n.textContent = ERR[e.code] || "Something went wrong reaching Claude. Try again."; out.append(n) }
+    if (["not_granted", "sampling_disabled", "not_declared", "capability_disabled"].includes(e.code)) $("#chat").hidden = true;
+    turns.pop();
+  } finally { $("#askBtn").disabled = false; $("#stopBtn").hidden = true }
+}
+$("#askForm").addEventListener("submit", e => { e.preventDefault(); ask() });
+$("#askBox").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask() } });
+$("#stopBtn").onclick = () => ctl?.abort();
+$("#chat").hidden = true;
+(async () => { try { sample = await window.claude?.use?.("sample") } catch (e) { sample = null } $("#chat").hidden = !sample })();
+
+/* ---------- data analysis page (AIS only) ---------- */
+const AN = window.SFP_ANALYSIS;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function hex2rgb(h) { h = h.replace("#", ""); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)) }
+function mix(a, b, t) { const A = hex2rgb(a), B = hex2rgb(b); return `rgb(${A.map((x, i) => Math.round(x + (B[i] - x) * t)).join(",")})` }
+function tipOn(el, html) { el.addEventListener("mousemove", e => showTip(e, html)); el.addEventListener("mouseleave", hideTip) }
+let anDone = false;
+function heatmap(sel, C) {
+  const k = C.labels.length, cs = 26, lw = 210, th = 160;
+  const neg = css("--div-neg"), mid = css("--div-mid"), pos = css("--div-pos");
+  const col = v => v == null ? "var(--sea)" : v >= 0 ? mix(mid, pos, v) : mix(mid, neg, -v);
+  let hm = `<svg class="chart heat" viewBox="0 0 ${lw + k * cs + 4} ${th + k * cs + 4}" style="min-width:${lw + k * cs * 0.75}px" role="img" aria-label="Spearman correlation heatmap">`;
+  C.labels.forEach((l, i) => { hm += `<text x="${lw - 6}" y="${th + i * cs + cs / 2 + 4}" text-anchor="end">${esc(l)}</text>`;
+    hm += `<text transform="translate(${lw + i * cs + cs / 2 + 4},${th - 6}) rotate(-60)">${esc(l)}</text>` });
+  C.matrix.forEach((row, i) => row.forEach((v, j) => hm += `<rect class="cell" data-i="${i}" data-j="${j}" x="${lw + j * cs}" y="${th + i * cs}" width="${cs}" height="${cs}" fill="${col(v)}"/>`));
+  $(sel).innerHTML = hm + "</svg>";
+  $(sel).querySelectorAll(".cell").forEach(c => { const i = +c.dataset.i, j = +c.dataset.j, v = C.matrix[i][j];
+    tipOn(c, `<b>${esc(C.labels[i])}</b> vs <b>${esc(C.labels[j])}</b><br>Spearman ρ = ${v == null ? "n/a" : v.toFixed(2)}`) });
+}
+function hbars(sel, items, label) {
+  const mx = Math.max(...items.map(t => t[1]), 1), bh = 22;
+  let svg = `<svg class="chart" viewBox="0 0 640 ${items.length * bh + 4}" role="img" aria-label="${esc(label)}">`;
+  items.forEach(([k, v], i) => { const w = v / mx * 400, y = i * bh + 2;
+    svg += `<text class="lbl" x="150" y="${y + 14}" text-anchor="end">${esc(k)}</text><rect class="bar" x="158" y="${y + 4}" width="${w}" height="${bh - 9}" rx="3"/><text x="${164 + w}" y="${y + 14}">${v.toLocaleString()}</text>` });
+  $(sel).innerHTML = svg + "</svg>";
+}
+const AREA = { baltic: "Baltic", north_sea_channel: "North Sea and Channel", norwegian_barents: "Norwegian and Barents Seas",
+  iberia_atlantic: "Iberian Atlantic", med_west: "Western Mediterranean", med_east: "Eastern Mediterranean", black_sea: "Black Sea",
+  red_sea: "Red Sea", gulf_of_aden: "Gulf of Aden", persian_gulf_oman: "Persian Gulf and Gulf of Oman", arabian_sea: "Arabian Sea" };
+const ISO = { RUS: "Russia", IRN: "Iran", VEN: "Venezuela", SYR: "Syria", PRK: "North Korea", IND: "India", CHN: "China", TUR: "Turkey",
+  ARE: "UAE", EGY: "Egypt", MYS: "Malaysia", SGP: "Singapore", SAU: "Saudi Arabia", NLD: "Netherlands", ESP: "Spain", ITA: "Italy",
+  GRC: "Greece", OMN: "Oman", IRQ: "Iraq", KWT: "Kuwait", QAT: "Qatar", BHR: "Bahrain", GBR: "UK", FRA: "France", DEU: "Germany",
+  NOR: "Norway", SWE: "Sweden", DNK: "Denmark", FIN: "Finland", POL: "Poland", BEL: "Belgium", PRT: "Portugal", MLT: "Malta",
+  GIB: "Gibraltar", ROU: "Romania", BGR: "Bulgaria", UKR: "Ukraine", GEO: "Georgia", PAK: "Pakistan", YEM: "Yemen", DJI: "Djibouti",
+  SDN: "Sudan", ISR: "Israel", LBN: "Lebanon", CYP: "Cyprus", LBY: "Libya", TUN: "Tunisia", DZA: "Algeria", MAR: "Morocco",
+  EST: "Estonia", LVA: "Latvia", LTU: "Lithuania", JOR: "Jordan", USA: "USA", BRA: "Brazil", KOR: "South Korea", JPN: "Japan" };
+function renderSar() {
+  const S = window.SFP_SAR; if (!S) return;
+  $("#sarSection").hidden = false;
+  const H = S.hormuz_index, m = H.months, ser = [["ais_tanker_transits", "AIS tanker transits (IMF PortWatch)", "var(--high)"],
+    ["total", "All radar detections (Sentinel-1)", "var(--accent)"], ["dark", "Radar detections with no AIS", "var(--ink)"]];
+  const W = 680, Ht = 240, L = 40, R = 12, T = 10, B = 28, n = m.length;
+  const vals = ser.flatMap(([k]) => H.series[k].filter(v => v != null)), ymax = Math.ceil(Math.max(150, ...vals) / 50) * 50;
+  const X = i => L + i / (n - 1) * (W - L - R), Y = v => T + (1 - v / ymax) * (Ht - T - B);
+  let g = `<svg class="chart" viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Hormuz AIS transits versus radar detections, indexed">`;
+  for (let v = 0; v <= ymax; v += 50) g += `<line class="ax" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
+  g += `<line x1="${L}" x2="${W - R}" y1="${Y(100)}" y2="${Y(100)}" stroke="var(--muted)" stroke-width="1"/>`;
+  [0, Math.floor(n / 3), Math.floor(2 * n / 3), n - 1].forEach(i => g += `<text x="${X(i)}" y="${Ht - 8}" text-anchor="middle">${m[i]}</text>`);
+  for (const [k, , c] of ser) {
+    const pts = H.series[k].map((v, i) => v == null ? null : [X(i), Y(v)]).filter(Boolean);
+    g += `<path d="M${pts.map(p => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L")}" fill="none" stroke="${c}" stroke-width="2"/>`;
+    const last = pts.at(-1); g += `<circle cx="${last[0]}" cy="${last[1]}" r="4" fill="${c}"/>`;
+  }
+  m.forEach((mm, i) => g += `<rect class="hit" data-i="${i}" x="${X(i) - (W - L - R) / n / 2}" y="${T}" width="${(W - L - R) / n}" height="${Ht - T - B}"/>`);
+  $("#sHz").innerHTML = g + "</svg>";
+  $("#sHz").querySelectorAll(".hit").forEach(h => { const i = +h.dataset.i;
+    tipOn(h, `<b>${m[i]}</b><br>AIS tanker transits: ${H.raw.ais_tanker_transits[i]} a day (index ${H.series.ais_tanker_transits[i]})<br>Radar detections: ${H.raw.total[i]} (index ${H.series.total[i]})<br>with no AIS: ${H.raw.dark[i]} (index ${H.series.dark[i]})`) });
+  $("#sHzLegend").innerHTML = ser.map(([, l, c]) => `<span><i style="background:${c}"></i>${l}</span>`).join("");
+  $("#sHzNote").textContent = `All three series indexed to their ${H.base} average = 100, so they share one axis. Raw values on hover.`;
+  const rows = Object.entries(S.areas).map(([a, r]) => {
+    const pre = r.filter(x => x.month < "2026-03"), last = r.slice(-3);
+    const sh = xs => { const d = xs.reduce((s, x) => s + x.dark, 0), t = xs.reduce((s, x) => s + x.dark + x.matched, 0); return t ? d / t : null };
+    return [a, sh(pre), sh(last), last.reduce((s, x) => s + x.dark, 0)] }).sort((a, b) => (b[2] ?? 0) - (a[2] ?? 0));
+  $("#sAreas tbody").innerHTML = rows.map(([a, p0, p1, d]) => `<tr style="cursor:default"><td>${esc(a)}</td><td class="num">${p0 == null ? "n/a" : Math.round(100 * p0) + "%"}</td>
+    <td class="num"><b>${p1 == null ? "n/a" : Math.round(100 * p1) + "%"}</b></td><td class="num">${d.toLocaleString()}</td></tr>`).join("");
+  const bb = S.cell_bbox, box = { lon0: bb[0], lat0: bb[1], lon1: bb[2], lat1: bb[3] };
+  const cmax = Math.log10(Math.max(...S.cells.map(c => c[2]), 2)), lo = css("--seq-lo"), hi = css("--seq-hi");
+  $("#sCellTitle").textContent = `Radar detections with no AIS, ${S.cell_area}, ${S.window_cells[0]} to ${S.window_cells[1]}`;
+  $("#sCells").innerHTML = mapSvg(box, { label: "Dark vessel detections", gstep: 1, body: (x, y) =>
+    S.cells.map(([la, lo_, nn]) => `<rect x="${x(lo_ - 0.025).toFixed(1)}" y="${y(la + 0.025).toFixed(1)}" width="${(x(lo_ + 0.025) - x(lo_ - 0.025)).toFixed(2)}" height="${(y(la - 0.025) - y(la + 0.025)).toFixed(2)}" fill="${mix(lo, hi, Math.log10(Math.max(nn, 1)) / cmax)}"><title>${nn} detections</title></rect>`).join("") });
+  enableZoom($("#sCells"));
+}
+function renderGfw() {
+  const G = window.SFP_GFW; if (!G) return;
+  $("#gfwSection").hidden = false;
+  $("#gIntro").textContent = `AIS presence of every vessel in 11 sea areas, ${G.period[0]} to ${G.period[1]}, from the Global Fishing Watch API (retrieved 2026-10-17, non-commercial licence). Tankers are identified by registry ship type; vessels without a registry record are kept and marked unverified. Their port visits, AIS gaps and loitering are worldwide.`;
+  $("#gKpis").innerHTML = [["", G.candidates.total.toLocaleString(), "candidate tankers"], ["", G.candidates.verified.toLocaleString(), "confirmed tankers by registry"],
+    ["", G.events.port_visits.toLocaleString(), "port visits"], ["", G.events.gaps_intentional.toLocaleString(), "AIS gaps judged intentional"]]
+    .map(([c, b, t]) => `<div class="kpi ${c}"><b>${b}</b><span>${t}</span></div>`).join("");
+  $("#gCov tbody").innerHTML = G.coverage_sanctioned.map(b => `<tr style="cursor:default"><td>${esc(b.batch)}</td><td class="num">${b.ships}</td>
+    <td class="num">${b.dma_before} (${Math.round(100 * b.dma_before / Math.max(b.ships, 1))}%)</td><td class="num"><b>${b.gfw_before} (${Math.round(100 * b.gfw_before / Math.max(b.ships, 1))}%)</b></td></tr>`).join("");
+  $("#gReg tbody").innerHTML = G.regions.map(r => `<tr style="cursor:default"><td>${esc(AREA[r.region] || r.region)}</td><td class="num">${r.vessels.toLocaleString()}</td>
+    <td class="num">${r.imo_vessels.toLocaleString()}</td><td class="num">${r.candidate_tankers.toLocaleString()}</td><td class="num">${r.verified.toLocaleString()}</td></tr>`).join("");
+  hbars("#gPorts", Object.entries(G.port_countries).slice(0, 15).map(([k, v]) => [ISO[k] || k, v]), "Port countries");
+  $("#gHot tbody").innerHTML = G.hotspots.map(h => `<tr style="cursor:default"><td>${esc(h.hotspot)}</td><td class="num">${h.tankers}</td><td class="num">${Math.round(h.hours).toLocaleString()}</td></tr>`).join("");
+  hbars("#gChurn", Object.entries(G.flag_churn_12m).map(([k, v]) => [`${k} flag${k === "1" ? "" : "s"}`, v]), "Flags per tanker in 12 months");
+  $("#gFlags").textContent = Object.entries(G.flags_now).map(([k, v]) => `${k} ${v.toLocaleString()}`).join(" · ");
+  heatmap("#gCorr", G.corr);
+  $("#gCorrNote").textContent = `Spearman ρ, ${G.tankers_in_snapshot.toLocaleString()} tankers present in the 6 months before ${G.snapshot}`;
+  $("#gPairs").innerHTML = G.top_pairs.slice(0, 8).map(p => `<li>${esc(p.a)} and ${esc(p.b)}: <b>${p.rho.toFixed(2)}</b></li>`).join("");
+}
+function renderAnalysis() {
+  if (!AN) { $("#anIntro").textContent = "Analysis data not generated yet."; return }
+  if (anDone) return; anDone = true;
+  const d = AN.daily, avgT = d.reduce((s, r) => s + r.tankers, 0) / d.length;
+  const imoShare = d.reduce((s, r) => s + r.tanker_imo_share * r.tankers, 0) / d.reduce((s, r) => s + r.tankers, 0);
+  $("#anIntro").textContent = `Danish Maritime Authority historical AIS only: ${AN.sampled_days} sampled days, one per week, ${AN.first_day} to ${AN.last_day}. Each day is reduced to one position per vessel every 5 minutes. No sanctions list or other dataset is used on this page.`;
+  $("#anKpis").innerHTML = [["", AN.sampled_days, "sampled days"], ["", AN.tankers_total.toLocaleString(), "distinct tankers seen"],
+    ["", Math.round(avgT), "tankers per sampled day"], ["", (100 * imoShare).toFixed(1) + "%", "tanker records with an IMO number"]]
+    .map(([c, b, t]) => `<div class="kpi ${c}"><b>${b}</b><span>${t}</span></div>`).join("");
+
+  // daily line
+  const W = 640, H = 220, L = 40, R = 10, T = 10, B = 26, n = d.length;
+  const ymax = Math.ceil(Math.max(...d.map(r => r.tankers)) / 50) * 50;
+  const X = i => L + (n > 1 ? i / (n - 1) : 0.5) * (W - L - R), Y = v => T + (1 - v / ymax) * (H - T - B);
+  let svg = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Tankers per sampled day">`;
+  for (let v = 0; v <= ymax; v += ymax / 4) svg += `<line class="ax" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
+  svg += `<path class="area" d="M${X(0)} ${Y(0)}L${d.map((r, i) => X(i) + " " + Y(r.tankers)).join("L")}L${X(n - 1)} ${Y(0)}Z"/>`;
+  svg += `<path class="line" d="M${d.map((r, i) => X(i) + " " + Y(r.tankers)).join("L")}"/>`;
+  const ticks = [0, Math.floor(n / 3), Math.floor(2 * n / 3), n - 1].filter((v, i, a) => a.indexOf(v) === i);
+  ticks.forEach(i => svg += `<text x="${X(i)}" y="${H - 8}" text-anchor="middle">${d[i].day}</text>`);
+  svg += `<circle cx="${X(n - 1)}" cy="${Y(d[n - 1].tankers)}" r="4" fill="var(--accent)"/>`;
+  d.forEach((r, i) => svg += `<rect class="hit" data-i="${i}" x="${X(i) - (W - L - R) / n / 2}" y="${T}" width="${(W - L - R) / n}" height="${H - T - B}"/>`);
+  $("#anDaily").innerHTML = svg + "</svg>";
+  $("#anDaily").querySelectorAll(".hit").forEach(h => { const r = d[+h.dataset.i]; tipOn(h, `<b>${r.day}</b><br>${r.tankers} tankers of ${r.class_a.toLocaleString()} Class A vessels<br>${(r.messages / 1e6).toFixed(1)}m AIS messages`) });
+  $("#anDailyNote").textContent = `Weekly sample, so each line point is one Wednesday. Days are downloaded newest first; earlier months fill in as downloads finish.`;
+
+  // type bars
+  const tm = AN.type_mix.slice(0, 8), tmax = Math.max(...tm.map(t => t.vessel_days)), bh = 24;
+  let tb = `<svg class="chart" viewBox="0 0 640 ${tm.length * bh + 4}" role="img" aria-label="Vessel types">`;
+  tm.forEach((t, i) => { const w = t.vessel_days / tmax * 420; const y = i * bh + 2;
+    tb += `<text class="lbl" x="120" y="${y + 15}" text-anchor="end">${esc(t.ship_type)}</text><rect class="bar" x="128" y="${y + 4}" width="${w}" height="${bh - 10}" rx="3" ${t.ship_type === "Tanker" ? 'style="fill:var(--ink)"' : ""}/>
+    <text x="${134 + w}" y="${y + 15}">${t.vessel_days.toLocaleString()}</text>` });
+  $("#anTypes").innerHTML = tb + "</svg>";
+
+  // density
+  const cells = AN.density.cells, step = AN.density.step, cmax = Math.log10(Math.max(...cells.map(c => c[2])));
+  const lo = css("--seq-lo"), hi = css("--seq-hi");
+  $("#anDensity").innerHTML = mapSvg(BOX, { label: "Tanker position density", gstep: 2, body: (x, y) =>
+    cells.map(([la, lo_, nn]) => `<rect x="${x(lo_).toFixed(1)}" y="${y(la + step).toFixed(1)}" width="${(x(lo_ + step) - x(lo_)).toFixed(2)}" height="${(y(la) - y(la + step)).toFixed(2)}" fill="${mix(lo, hi, Math.log10(nn) / cmax)}"/>`).join("") });
+  enableZoom($("#anDensity"));
+  $("#anDensityLegend").innerHTML = `<span>Fewer fixes</span><span style="display:inline-block;width:160px;height:10px;border-radius:3px;background:linear-gradient(90deg,var(--seq-lo),var(--seq-hi))"></span><span>More (log scale, max ${Math.round(10 ** cmax).toLocaleString()} per cell)</span>`;
+
+  heatmap("#anCorr", AN.corr);
+  $("#anCorrNote").textContent = `Spearman ρ, ${AN.tankers_in_snapshot.toLocaleString()} tankers seen in the 180 days before ${AN.snapshot}`;
+  $("#anPairs").innerHTML = AN.top_pairs.slice(0, 6).map(p => `<li>${esc(p.a)} and ${esc(p.b)}: <b>${p.rho.toFixed(2)}</b></li>`).join("");
+  renderSar();
+  renderGfw();
+
+  // summary + destinations
+  const fmt = v => v == null ? "n/a" : Math.abs(v) >= 1e5 ? Math.round(v).toLocaleString() : (+v).toFixed(v % 1 ? 2 : 0);
+  $("#anSummary tbody").innerHTML = AN.summary.map(s => `<tr style="cursor:default"><td>${esc(s.label)}</td><td class="num">${s.nonzero_pct}%</td><td class="num">${s.missing_pct}%</td><td class="num">${fmt(s.median)}</td><td class="num">${fmt(s.p90)}</td></tr>`).join("");
+  $("#anDest tbody").innerHTML = AN.destinations.slice(0, 12).map(r => `<tr style="cursor:default"><td class="mono">${esc(r.destination)}</td><td class="num">${r.tankers}</td></tr>`).join("");
+  const m = D.model;
+  $("#anModel").innerHTML = `<p style="margin:0 0 8px">Gradient-boosted decision trees (LightGBM), with domain-direction constraints: a signal like "port calls in Russia or Iran" can only raise risk, never lower it. Probabilities are calibrated (Platt scaling) on the latest held-out months.</p>
+    <p style="margin:0 0 8px"><b>Question it answers:</b> will this tanker be added to the UK, EU or US sanctions list in the next 90 days? <b>Input:</b> ${GLOBAL
+      ? "time in each sea area, worldwide port calls, AIS gaps and loitering from Global Fishing Watch, flag, name and MMSI changes, registry build year and tonnage, plus Danish AIS behaviour where the ship passed Denmark"
+      : "only the ship's Danish AIS behaviour in the 180 days before the scoring date (12 months for name and flag changes)"}. <b>Training rows:</b> one per tanker per month, ${m.rows.toLocaleString()} rows, ${m.positives} later sanctioned.</p>
+    <p style="margin:0">Ships are found by where they sailed, never from a sanctions list, so the training population is not selected by its own outcome. Compared against random order, a flag-only rule, a hand-weighted rule score and logistic regression. Each flagged ship's reasons come from the model's per-signal contributions (TreeSHAP).</p>`;
+}
+
+/* ---------- routing ---------- */
+$("#back").onclick = () => { location.hash = "home" };
+function route() {
+  const h = location.hash.slice(1);
+  $("#navHome").removeAttribute("aria-current"); $("#navAnalysis").removeAttribute("aria-current");
+  $("#analysis").hidden = true;
+  if (h.startsWith("vessel-")) renderVessel(h.slice(7));
+  else if (h === "analysis") { $("#vessel").hidden = true; $("#home").hidden = true; $("#analysis").hidden = false; $("#navAnalysis").setAttribute("aria-current", "page"); renderAnalysis(); window.scrollTo(0, 0) }
+  else { $("#vessel").hidden = true; $("#home").hidden = false; $("#navHome").setAttribute("aria-current", "page"); renderPast() }
+}
+window.addEventListener("hashchange", route);
+renderKpis(); renderWatch(); if (GLOBAL) renderAccum(); else $("#accum").closest(".panel").hidden = true; renderBacktest(); fleetMap(); route();
+</script>

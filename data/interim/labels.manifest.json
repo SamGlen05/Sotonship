@@ -1,0 +1,27 @@
+{
+  "ran_utc": "2026-10-17T02:19:52+00:00",
+  "inputs": [
+    {
+      "file": "uk/UK-Sanctions-List.csv",
+      "url": "https://sanctionslist.fcdo.gov.uk/docs/UK-Sanctions-List.csv",
+      "retrieved_utc": "2026-10-16T21:31:05+00:00"
+    },
+    {
+      "file": "eu/ImportversionListOfEUDesignatedVessels240726.csv",
+      "url": "https://www.dma.dk/Media/639204766104358805/ImportversionListOfEUDesignatedVessels240726.csv",
+      "retrieved_utc": "2026-10-16T21:31:12+00:00"
+    },
+    {
+      "file": "ofac/SDN_ADVANCED.XML",
+      "url": "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN_ADVANCED.XML",
+      "retrieved_utc": "2026-10-16T21:37:25+00:00"
+    }
+  ],
+  "outputs": {
+    "uk_vessels": 683,
+    "eu_vessels": 733,
+    "ofac_vessels": 1559,
+    "labels": 1988
+  },
+  "notes": ""
+}

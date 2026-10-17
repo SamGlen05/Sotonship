@@ -1,0 +1,39 @@
+{
+  "ran_utc": "2026-10-17T02:22:11+00:00",
+  "inputs": [
+    {
+      "file": "gfw/presence",
+      "url": null,
+      "retrieved_utc": null
+    },
+    {
+      "file": "gfw/classify",
+      "url": null,
+      "retrieved_utc": null
+    },
+    {
+      "file": "gfw/identity",
+      "url": null,
+      "retrieved_utc": null
+    },
+    {
+      "file": "gfw/region_events",
+      "url": null,
+      "retrieved_utc": null
+    },
+    {
+      "file": "gfw/lastpos",
+      "url": null,
+      "retrieved_utc": null
+    }
+  ],
+  "outputs": {
+    "gfw_presence": 471044,
+    "gfw_identity": 40892,
+    "gfw_registry": 13148,
+    "gfw_events": 3920720,
+    "gfw_lastpos": 12413,
+    "gfw_candidates": 17545
+  },
+  "notes": "Global Fishing Watch API v3, non-commercial licence; see data/raw/manifest.jsonl for URLs"
+}

@@ -1,0 +1,15 @@
+{
+  "ran_utc": "2026-10-17T02:20:19+00:00",
+  "inputs": [
+    {
+      "file": "data/interim/ais_v2",
+      "url": null,
+      "retrieved_utc": null
+    }
+  ],
+  "outputs": {
+    "tankers": 1747,
+    "sampled_days": 113
+  },
+  "notes": "AIS only; no list data"
+}
